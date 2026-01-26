@@ -1,0 +1,49 @@
+appId: com.terminaldeck.app
+productName: Terminal Deck
+directories:
+  output: release
+  buildResources: assets
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - node_modules/node-pty/**/*
+  - node_modules/electron-store/**/*
+
+asar: true
+asarUnpack:
+  - node_modules/node-pty/**/*
+
+# 禁用代码签名（个人使用）
+forceCodeSigning: false
+
+win:
+  target:
+    - target: dir
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
+  icon: assets/icons/icon.ico
+  signAndEditExecutable: false
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: assets/icons/icon.icns
+  category: public.app-category.developer-tools
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  icon: assets/icons
+  category: Development

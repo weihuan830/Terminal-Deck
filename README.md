@@ -6,11 +6,9 @@ A cross-platform multi-terminal manager designed for AI coding agents. Run and m
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Electron](https://img.shields.io/badge/electron-28.0.0-blue.svg)
 
-<!--
-## Screenshots
-Add screenshots here after taking them:
-![Terminal Deck Screenshot](./docs/screenshot.png)
--->
+## Screenshot
+
+![Terminal Deck Screenshot](./imgs/screenshot.png)
 
 ## Features
 

@@ -2,7 +2,10 @@
   "name": "terminal-deck",
   "version": "1.0.0",
   "description": "A cross-platform multi-terminal manager for AI coding agents. Run and manage multiple Claude Code instances in one window.",
-  "author": "weihuan830",
+  "author": {
+    "name": "weihuan830",
+    "email": "weihuan830@users.noreply.github.com"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",

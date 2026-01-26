@@ -181,7 +181,6 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
       isReadyRef.current = false;
     };
     // 只在 terminalId 和 groupId 变化时重新初始化
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminalId, groupId]);
 
   // 监听终端数据 - 带 resize 缓冲

@@ -2,7 +2,7 @@ import * as pty from 'node-pty';
 import { ipcMain, BrowserWindow } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
-import * as path from 'path';
+import { execSync } from 'child_process';
 
 interface PtyProcess {
   id: string;
@@ -264,7 +264,7 @@ export class TerminalManager extends EventEmitter {
           const pid = proc.pty.pid;
           if (pid) {
             try {
-              require('child_process').execSync(`taskkill /pid ${pid} /T /F`, { stdio: 'ignore' });
+              execSync(`taskkill /pid ${pid} /T /F`, { stdio: 'ignore' });
             } catch {
               // 进程可能已经退出，忽略错误
             }
@@ -285,7 +285,7 @@ export class TerminalManager extends EventEmitter {
    * 关闭所有终端
    */
   killAll(): void {
-    for (const [terminalId, proc] of this.processes) {
+    for (const [, proc] of this.processes) {
       try {
         // Windows 上需要强制杀死进程树
         if (process.platform === 'win32') {
@@ -293,7 +293,7 @@ export class TerminalManager extends EventEmitter {
           const pid = proc.pty.pid;
           if (pid) {
             try {
-              require('child_process').execSync(`taskkill /pid ${pid} /T /F`, { stdio: 'ignore' });
+              execSync(`taskkill /pid ${pid} /T /F`, { stdio: 'ignore' });
             } catch {
               // 进程可能已经退出，忽略错误
             }

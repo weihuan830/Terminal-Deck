@@ -1,9 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Toolbar } from './Toolbar';
 import { TerminalGrid } from '../terminal/TerminalGrid';
 import { useTerminalStore } from '../../stores/terminal-store';
 
 export const MainContent: React.FC = () => {
+  const { t } = useTranslation();
   const { groups, activeGroupId, getActiveGroup } = useTerminalStore();
   const activeGroup = getActiveGroup();
 
@@ -11,10 +13,10 @@ export const MainContent: React.FC = () => {
     <div className="flex flex-col flex-1 h-full overflow-hidden">
       {activeGroup ? (
         <>
-          {/* 工具栏 */}
+          {/* Toolbar */}
           <Toolbar group={activeGroup} />
 
-          {/* 终端网格容器 - 所有分组都保持挂载，通过 CSS 控制显示 */}
+          {/* Terminal grid container - all groups stay mounted, visibility controlled by CSS */}
           <div className="flex-1 overflow-hidden relative">
             {groups.map((group) => (
               <div
@@ -22,8 +24,8 @@ export const MainContent: React.FC = () => {
                 className="absolute inset-0"
                 style={{
                   visibility: group.id === activeGroupId ? 'visible' : 'hidden',
-                  // 使用 visibility 而不是 display:none，这样终端仍然有尺寸可以正确渲染
-                  // 但是隐藏的终端不会响应事件
+                  // Use visibility instead of display:none so terminals still have dimensions to render correctly
+                  // Hidden terminals won't respond to events
                   pointerEvents: group.id === activeGroupId ? 'auto' : 'none',
                 }}
               >
@@ -48,8 +50,8 @@ export const MainContent: React.FC = () => {
                 d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            <p className="text-lg mb-2">没有选中的分组</p>
-            <p className="text-sm">请从左侧选择或创建一个分组</p>
+            <p className="text-lg mb-2">{t('mainContent.noSelectedGroup')}</p>
+            <p className="text-sm">{t('mainContent.selectOrCreateGroup')}</p>
           </div>
         </div>
       )}

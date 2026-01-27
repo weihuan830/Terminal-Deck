@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { GroupList } from '../sidebar/GroupList';
 import { cn } from '../../utils/cn';
 
@@ -10,6 +11,8 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collapsed, onToggleCollapse }) => {
+  const { t } = useTranslation();
+
   return (
     <div
       className={cn(
@@ -17,7 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collap
         collapsed ? "w-14" : "w-64"
       )}
     >
-      {/* Logo + 收起按钮 */}
+      {/* Logo + Collapse button */}
       <div className="flex items-center h-14 border-b border-border-color px-2">
         {!collapsed && (
           <h1 className="flex-1 text-lg font-bold text-fg-primary text-center">
@@ -32,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collap
             "hover:bg-bg-hover transition-colors",
             collapsed && "mx-auto"
           )}
-          title={collapsed ? "展开侧边栏" : "收起侧边栏"}
+          title={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
         >
           <svg
             className={cn("w-5 h-5 transition-transform", collapsed && "rotate-180")}
@@ -45,19 +48,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collap
         </button>
       </div>
 
-      {/* 分组列表 */}
+      {/* Group list */}
       <div className="flex-1 overflow-y-auto">
         {!collapsed && <GroupList />}
         {collapsed && (
           <div className="flex flex-col items-center py-2 space-y-2">
-            {/* 收起状态下显示图标提示 */}
+            {/* Show icon hints in collapsed state */}
           </div>
         )}
       </div>
 
-      {/* 底部按钮 */}
+      {/* Bottom buttons */}
       <div className={cn("p-2 border-t border-border-color space-y-2", collapsed && "px-1")}>
-        {/* 新建分组 */}
+        {/* New group */}
         <button
           onClick={onNewGroup}
           className={cn(
@@ -66,15 +69,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collap
             'hover:bg-accent-secondary transition-colors',
             collapsed ? 'p-2' : 'px-4 py-2'
           )}
-          title="新建分组"
+          title={t('sidebar.newGroup')}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          {!collapsed && <span className="ml-2">新建分组</span>}
+          {!collapsed && <span className="ml-2">{t('sidebar.newGroup')}</span>}
         </button>
 
-        {/* 设置按钮 */}
+        {/* Settings button */}
         <button
           onClick={onSettings}
           className={cn(
@@ -83,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collap
             'hover:bg-bg-hover transition-colors',
             collapsed ? 'p-2' : 'px-4 py-2'
           )}
-          title="设置"
+          title={t('sidebar.settings')}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -99,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collap
               d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          {!collapsed && <span className="ml-2">设置</span>}
+          {!collapsed && <span className="ml-2">{t('sidebar.settings')}</span>}
         </button>
       </div>
     </div>

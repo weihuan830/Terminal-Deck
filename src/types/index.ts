@@ -63,6 +63,7 @@ export interface AppSettings {
   theme: 'dark' | 'light' | 'system';
   fontSize: number;
   fontFamily: string;
+  language: 'zh-CN' | 'en';
 
   // 终端
   defaultShell: string;

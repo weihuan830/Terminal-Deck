@@ -1,4 +1,5 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDraggable } from '@dnd-kit/core';
 import { useTerminal } from '../../hooks/useTerminal';
 import { useTerminalStore } from '../../stores/terminal-store';
@@ -24,6 +25,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
   isActive,
   onFocus,
 }) => {
+  const { t } = useTranslation();
   const { containerRef, focus, terminalInstance } = useTerminal({
     terminalId: terminal.id,
     groupId,
@@ -35,7 +37,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0 });
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
-  // 设置为可拖拽
+  // Make draggable
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `terminal-${terminal.id}`,
     data: {
@@ -46,7 +48,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
     },
   });
 
-  // 处理标签编辑
+  // Handle label edit
   const handleLabelSubmit = useCallback(() => {
     if (editLabel.trim()) {
       updateTerminal(groupId, terminal.id, { label: editLabel.trim() });
@@ -56,13 +58,13 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
     setIsEditing(false);
   }, [editLabel, groupId, terminal.id, terminal.label, updateTerminal]);
 
-  // 处理关闭
+  // Handle close
   const handleClose = useCallback(async () => {
     await window.electronAPI.terminal.kill(terminal.id);
     removeTerminal(groupId, terminal.id);
   }, [groupId, terminal.id, removeTerminal]);
 
-  // 获取状态颜色
+  // Get status color
   const getStatusColor = () => {
     switch (terminal.status) {
       case 'running':
@@ -76,21 +78,21 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
     }
   };
 
-  // 获取状态文字
+  // Get status text
   const getStatusText = () => {
     switch (terminal.status) {
       case 'running':
-        return '运行中';
+        return t('terminal.status.running');
       case 'error':
-        return '错误';
+        return t('terminal.status.error');
       case 'exited':
-        return `已退出 (${terminal.exitCode ?? '-'})`;
+        return t('terminal.status.exitedWithCode', { code: terminal.exitCode ?? '-' });
       default:
-        return '空闲';
+        return t('terminal.status.idle');
     }
   };
 
-  // 处理右键菜单
+  // Handle context menu
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -101,12 +103,12 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
     });
   }, []);
 
-  // 关闭右键菜单
+  // Close context menu
   const closeContextMenu = useCallback(() => {
     setContextMenu({ visible: false, x: 0, y: 0 });
   }, []);
 
-  // 复制选中文本
+  // Copy selected text
   const handleCopy = useCallback(() => {
     if (terminalInstance) {
       const selection = terminalInstance.getSelection();
@@ -117,7 +119,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
     closeContextMenu();
   }, [terminalInstance, closeContextMenu]);
 
-  // 粘贴文本
+  // Paste text
   const handlePaste = useCallback(async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -130,7 +132,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
     closeContextMenu();
   }, [terminal.id, closeContextMenu]);
 
-  // 清屏
+  // Clear screen
   const handleClear = useCallback(() => {
     if (terminalInstance) {
       terminalInstance.clear();
@@ -138,7 +140,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
     closeContextMenu();
   }, [terminalInstance, closeContextMenu]);
 
-  // 全选
+  // Select all
   const handleSelectAll = useCallback(() => {
     if (terminalInstance) {
       terminalInstance.selectAll();
@@ -146,7 +148,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
     closeContextMenu();
   }, [terminalInstance, closeContextMenu]);
 
-  // 点击外部关闭菜单
+  // Click outside to close menu
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
@@ -174,12 +176,12 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
         focus();
       }}
     >
-      {/* 头部 */}
+      {/* Header */}
       <div
         className="flex items-center justify-between px-3 py-2 bg-bg-secondary border-b border-border-color"
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          {/* 拖拽手柄图标 - 只有这里可以拖拽 */}
+          {/* Drag handle icon - only this area is draggable */}
           <div
             className="cursor-grab active:cursor-grabbing p-0.5 -m-0.5 rounded hover:bg-bg-hover"
             {...listeners}
@@ -195,13 +197,13 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
             </svg>
           </div>
 
-          {/* 状态指示器 */}
+          {/* Status indicator */}
           <div
             className={cn('w-2 h-2 rounded-full flex-shrink-0', getStatusColor())}
             title={getStatusText()}
           />
 
-          {/* 标签 */}
+          {/* Label */}
           {isEditing ? (
             <input
               type="text"
@@ -232,13 +234,13 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
             </span>
           )}
 
-          {/* 工作目录 */}
+          {/* Working directory */}
           <span className="text-xs text-fg-muted truncate hidden md:inline" title={terminal.cwd}>
             {terminal.cwd.split(/[/\\]/).pop() || terminal.cwd}
           </span>
         </div>
 
-        {/* 操作按钮 */}
+        {/* Action buttons */}
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={(e) => {
@@ -246,7 +248,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
               handleClose();
             }}
             className="p-1 text-fg-muted hover:text-status-error hover:bg-bg-hover rounded transition-colors"
-            title="关闭终端"
+            title={t('terminal.closeTerminal')}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -255,14 +257,14 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
         </div>
       </div>
 
-      {/* 终端容器 */}
+      {/* Terminal container */}
       <div
         ref={containerRef}
         className="flex-1 min-h-0"
         onContextMenu={handleContextMenu}
       />
 
-      {/* 右键菜单 */}
+      {/* Context menu */}
       {contextMenu.visible && (
         <div
           ref={contextMenuRef}
@@ -276,7 +278,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
-            复制
+            {t('common.copy')}
           </button>
           <button
             onClick={handlePaste}
@@ -285,7 +287,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            粘贴
+            {t('common.paste')}
           </button>
           <div className="my-1 border-t border-border-color" />
           <button
@@ -295,7 +297,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5h16M4 12h16M4 19h16" />
             </svg>
-            全选
+            {t('common.selectAll')}
           </button>
           <button
             onClick={handleClear}
@@ -304,7 +306,7 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-            清屏
+            {t('common.clear')}
           </button>
         </div>
       )}

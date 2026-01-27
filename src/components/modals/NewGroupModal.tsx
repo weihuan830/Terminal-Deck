@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { useTerminalStore } from '../../stores/terminal-store';
 import { PRESET_LAYOUTS, type GridLayout } from '../../types';
@@ -9,6 +10,7 @@ interface NewGroupModalProps {
 }
 
 export const NewGroupModal: React.FC<NewGroupModalProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const { addGroup } = useTerminalStore();
   const [name, setName] = useState('');
   const [selectedLayout, setSelectedLayout] = useState<GridLayout>(PRESET_LAYOUTS['2x2']);
@@ -24,16 +26,16 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ onClose }) => {
   const layouts = Object.entries(PRESET_LAYOUTS);
 
   return (
-    <Modal title="新建分组" onClose={onClose}>
+    <Modal title={t('group.newGroup')} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 分组名称 */}
+        {/* Group name */}
         <div>
-          <label className="block text-sm text-fg-secondary mb-1">分组名称</label>
+          <label className="block text-sm text-fg-secondary mb-1">{t('group.groupName')}</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="输入分组名称..."
+            placeholder={t('group.groupNamePlaceholder')}
             className={cn(
               'w-full px-3 py-2 rounded',
               'bg-bg-tertiary border border-border-color',
@@ -44,9 +46,9 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ onClose }) => {
           />
         </div>
 
-        {/* 布局选择 */}
+        {/* Layout selection */}
         <div>
-          <label className="block text-sm text-fg-secondary mb-2">选择布局</label>
+          <label className="block text-sm text-fg-secondary mb-2">{t('group.selectLayout')}</label>
           <div className="grid grid-cols-3 gap-2">
             {layouts.map(([layoutName, layout]) => {
               const isSelected =
@@ -64,7 +66,7 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ onClose }) => {
                       : 'border-border-color hover:border-fg-muted hover:bg-bg-hover'
                   )}
                 >
-                  {/* 布局预览 */}
+                  {/* Layout preview */}
                   <div
                     className="w-12 h-12 gap-0.5 mb-1"
                     style={{
@@ -83,7 +85,7 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ onClose }) => {
                       />
                     ))}
                   </div>
-                  {/* 布局名称 */}
+                  {/* Layout name */}
                   <span
                     className={cn('text-sm', isSelected ? 'text-fg-primary' : 'text-fg-secondary')}
                   >
@@ -95,7 +97,7 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ onClose }) => {
           </div>
         </div>
 
-        {/* 按钮 */}
+        {/* Buttons */}
         <div className="flex justify-end gap-2 pt-2">
           <button
             type="button"
@@ -106,7 +108,7 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ onClose }) => {
               'hover:bg-bg-hover transition-colors'
             )}
           >
-            取消
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -118,7 +120,7 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ onClose }) => {
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
           >
-            创建
+            {t('common.create')}
           </button>
         </div>
       </form>

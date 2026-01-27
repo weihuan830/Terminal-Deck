@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { useTerminalStore } from '../../stores/terminal-store';
 import { cn } from '../../utils/cn';
@@ -10,11 +11,33 @@ interface SettingsModalProps {
 type SettingsTab = 'general' | 'claude';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
+  const { t, i18n } = useTranslation();
   const { settings, updateSettings } = useTerminalStore();
   const [localSettings, setLocalSettings] = useState(settings);
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [showHelp, setShowHelp] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showSaveHint, setShowSaveHint] = useState(false);
+
+  const psCommand = '(Get-Command claude).Source';
+
+  // Sync language with i18n when localSettings changes
+  useEffect(() => {
+    if (localSettings.language && localSettings.language !== i18n.language) {
+      i18n.changeLanguage(localSettings.language);
+    }
+  }, [localSettings.language, i18n]);
+
+  const handleCopyCommand = async () => {
+    try {
+      await navigator.clipboard.writeText(psCommand);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
 
   const handleRedetect = async () => {
     setIsDetecting(true);
@@ -33,13 +56,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
   const handleSave = () => {
     updateSettings(localSettings);
-    onClose();
+    // Persist language preference
+    if (localSettings.language) {
+      localStorage.setItem('i18nextLng', localSettings.language);
+    }
+    // If Claude settings changed, show hint
+    if (
+      localSettings.claudePath !== settings.claudePath ||
+      localSettings.extraPaths !== settings.extraPaths
+    ) {
+      setShowSaveHint(true);
+    } else {
+      onClose();
+    }
   };
 
   return (
-    <Modal title="设置" onClose={onClose} width="max-w-2xl">
+    <Modal title={t('settings.title')} onClose={onClose} width="max-w-2xl">
       <div className="flex gap-4">
-        {/* 左侧标签页 */}
+        {/* Left tabs */}
         <div className="w-32 flex-shrink-0 border-r border-border-color pr-4">
           <button
             onClick={() => setActiveTab('general')}
@@ -50,7 +85,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 : 'text-fg-secondary hover:bg-bg-hover'
             )}
           >
-            常规
+            {t('settings.tabs.general')}
           </button>
           <button
             onClick={() => setActiveTab('claude')}
@@ -61,21 +96,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 : 'text-fg-secondary hover:bg-bg-hover'
             )}
           >
-            Claude CLI
+            {t('settings.tabs.claude')}
           </button>
         </div>
 
-        {/* 右侧内容 */}
-        <div className="flex-1 space-y-6">
+        {/* Right content */}
+        <div className="flex-1 min-w-0 space-y-6">
           {activeTab === 'general' && (
             <>
-              {/* 外观设置 */}
+              {/* Language settings */}
               <div>
-                <h3 className="text-sm font-medium text-fg-primary mb-3">外观</h3>
+                <h3 className="text-sm font-medium text-fg-primary mb-3">{t('settings.language.title')}</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-fg-secondary">{t('settings.language.label')}</label>
+                    <select
+                      value={localSettings.language || 'zh-CN'}
+                      onChange={(e) =>
+                        setLocalSettings((s) => ({
+                          ...s,
+                          language: e.target.value as 'zh-CN' | 'en',
+                        }))
+                      }
+                      className={cn(
+                        'w-64 px-2 py-1 rounded text-sm',
+                        'bg-bg-tertiary border border-border-color',
+                        'text-fg-primary',
+                        'focus:border-border-active focus:outline-none'
+                      )}
+                    >
+                      <option value="zh-CN">中文</option>
+                      <option value="en">English</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Appearance settings */}
+              <div>
+                <h3 className="text-sm font-medium text-fg-primary mb-3">{t('settings.appearance.title')}</h3>
           <div className="space-y-3">
-            {/* 字体大小 */}
+            {/* Font size */}
             <div className="flex items-center justify-between">
-              <label className="text-sm text-fg-secondary">字体大小</label>
+              <label className="text-sm text-fg-secondary">{t('settings.appearance.fontSize')}</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() =>
@@ -117,9 +180,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               </div>
             </div>
 
-            {/* 字体 */}
+            {/* Font family */}
             <div className="flex items-center justify-between">
-              <label className="text-sm text-fg-secondary">字体</label>
+              <label className="text-sm text-fg-secondary">{t('settings.appearance.fontFamily')}</label>
               <input
                 type="text"
                 value={localSettings.fontFamily}
@@ -140,13 +203,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           </div>
         </div>
 
-        {/* 终端设置 */}
+        {/* Terminal settings */}
         <div>
-          <h3 className="text-sm font-medium text-fg-primary mb-3">终端</h3>
+          <h3 className="text-sm font-medium text-fg-primary mb-3">{t('settings.terminal.title')}</h3>
           <div className="space-y-3">
-            {/* 默认 Shell */}
+            {/* Default shell */}
             <div className="flex items-center justify-between">
-              <label className="text-sm text-fg-secondary">默认 Shell</label>
+              <label className="text-sm text-fg-secondary">{t('settings.terminal.defaultShell')}</label>
               <input
                 type="text"
                 value={localSettings.defaultShell}
@@ -166,9 +229,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               />
             </div>
 
-            {/* 默认工作目录 */}
+            {/* Default working directory */}
             <div className="flex items-center justify-between">
-              <label className="text-sm text-fg-secondary">默认工作目录</label>
+              <label className="text-sm text-fg-secondary">{t('settings.terminal.defaultCwd')}</label>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -179,7 +242,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                       defaultCwd: e.target.value,
                     }))
                   }
-                  placeholder="留空使用用户目录"
+                  placeholder={t('settings.terminal.defaultCwdPlaceholder')}
                   className={cn(
                     'w-48 px-2 py-1 rounded text-sm',
                     'bg-bg-tertiary border border-border-color',
@@ -196,14 +259,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   }}
                   className="px-2 py-1 text-sm bg-bg-tertiary hover:bg-bg-hover rounded"
                 >
-                  浏览
+                  {t('common.browse')}
                 </button>
               </div>
             </div>
 
-            {/* 回滚行数 */}
+            {/* Scrollback lines */}
             <div className="flex items-center justify-between">
-              <label className="text-sm text-fg-secondary">回滚行数</label>
+              <label className="text-sm text-fg-secondary">{t('settings.terminal.scrollbackLines')}</label>
               <input
                 type="number"
                 value={localSettings.scrollbackLines}
@@ -230,61 +293,77 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
           {activeTab === 'claude' && (
             <>
-              {/* Claude CLI 配置 */}
+              {/* Claude CLI configuration */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-fg-primary">Claude CLI 路径配置</h3>
+                  <h3 className="text-sm font-medium text-fg-primary">{t('settings.claude.title')}</h3>
                   <button
                     onClick={() => setShowHelp(!showHelp)}
                     className="text-xs text-blue-400 hover:text-blue-300"
                   >
-                    {showHelp ? '隐藏教程' : '查看教程'}
+                    {showHelp ? t('settings.claude.hideTutorial') : t('settings.claude.showTutorial')}
                   </button>
                 </div>
 
-                {/* 教程说明 */}
+                {/* Tutorial */}
                 {showHelp && (
                   <div className="mb-4 p-3 bg-bg-tertiary rounded-lg text-xs text-fg-secondary space-y-3">
                     <div>
-                      <p className="font-medium text-fg-primary mb-1">如何找到 Claude 的安装路径？</p>
-                      <p className="mb-2">在 PowerShell 或 CMD 中运行以下命令：</p>
-                      <div className="bg-black/30 p-2 rounded font-mono text-green-400 mb-2">
-                        where claude
+                      <p className="font-medium text-fg-primary mb-1">{t('settings.claude.tutorial.findPath')}</p>
+                      <p className="mb-2">{t('settings.claude.tutorial.openPowerShell')}</p>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex-1 bg-black/30 p-2 rounded font-mono text-green-400">
+                          {psCommand}
+                        </div>
+                        <button
+                          onClick={handleCopyCommand}
+                          className={cn(
+                            'px-2 py-1.5 rounded text-xs transition-colors',
+                            'border border-border-color',
+                            copied
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'bg-bg-hover hover:bg-bg-active text-fg-secondary'
+                          )}
+                        >
+                          {copied ? t('common.copied') : t('common.copy')}
+                        </button>
                       </div>
-                      <p className="mb-1">如果安装了 Claude，会显示类似：</p>
+                      <p className="mb-1">{t('settings.claude.tutorial.ifInstalled')}</p>
                       <div className="bg-black/30 p-2 rounded font-mono text-yellow-400 text-[11px] break-all">
-                        C:\Users\你的用户名\AppData\Local\Microsoft\WinGet\Packages\Anthropic.ClaudeCode_...\claude.exe
+                        {t('settings.claude.tutorial.pathExample')}
                       </div>
-                    </div>
-
-                    <div className="border-t border-border-color pt-3">
-                      <p className="font-medium text-fg-primary mb-1">npm 全局安装的情况：</p>
-                      <p className="mb-2">如果是通过 npm 安装的，路径通常是：</p>
-                      <div className="bg-black/30 p-2 rounded font-mono text-yellow-400 text-[11px]">
-                        C:\Users\你的用户名\AppData\Roaming\npm
-                      </div>
-                      <p className="mt-2 text-orange-400">
-                        注意：npm 安装的 claude 会生成 .ps1 脚本，可能受 PowerShell 执行策略限制。
-                        建议使用 WinGet 安装：<span className="font-mono">winget install claude</span>
+                      <p className="mt-2 text-blue-400">
+                        {t('settings.claude.tutorial.pasteFolder')}
                       </p>
                     </div>
 
                     <div className="border-t border-border-color pt-3">
-                      <p className="font-medium text-fg-primary mb-1">填写说明：</p>
+                      <p className="font-medium text-fg-primary mb-1">{t('settings.claude.tutorial.npmInstall')}</p>
+                      <p className="mb-2">{t('settings.claude.tutorial.npmPath')}</p>
+                      <div className="bg-black/30 p-2 rounded font-mono text-yellow-400 text-[11px]">
+                        {t('settings.claude.tutorial.npmPathExample')}
+                      </div>
+                      <p className="mt-2 text-orange-400">
+                        {t('settings.claude.tutorial.npmNote')}<span className="font-mono">winget install claude</span>
+                      </p>
+                    </div>
+
+                    <div className="border-t border-border-color pt-3">
+                      <p className="font-medium text-fg-primary mb-1">{t('settings.claude.tutorial.instructions')}</p>
                       <ul className="list-disc list-inside space-y-1">
-                        <li><strong>Claude 路径</strong>：填写 claude.exe 所在的文件夹路径（不是 .exe 文件本身）</li>
-                        <li><strong>额外 PATH</strong>：如果有其他工具也找不到，可以添加多个路径，用英文分号 ; 分隔</li>
-                        <li>留空则使用自动检测</li>
+                        <li><strong>{t('settings.claude.tutorial.claudePathDesc')}</strong></li>
+                        <li><strong>{t('settings.claude.tutorial.extraPathDesc')}</strong></li>
+                        <li>{t('settings.claude.tutorial.leaveEmpty')}</li>
                       </ul>
                     </div>
                   </div>
                 )}
 
                 <div className="space-y-4">
-                  {/* Claude 路径 */}
+                  {/* Claude path */}
                   <div>
                     <label className="block text-sm text-fg-secondary mb-1">
-                      Claude 可执行文件所在目录
+                      {t('settings.claude.claudePath')}
                     </label>
                     <div className="flex items-center gap-2">
                       <input
@@ -296,9 +375,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                             claudePath: e.target.value,
                           }))
                         }
-                        placeholder="留空使用自动检测"
+                        placeholder={t('settings.claude.claudePathPlaceholder')}
                         className={cn(
-                          'flex-1 px-2 py-1.5 rounded text-sm',
+                          'flex-1 min-w-0 px-2 py-1.5 rounded text-sm',
                           'bg-bg-tertiary border border-border-color',
                           'text-fg-primary placeholder-fg-muted',
                           'focus:border-border-active focus:outline-none'
@@ -313,18 +392,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                         }}
                         className="px-3 py-1.5 text-sm bg-bg-tertiary hover:bg-bg-hover rounded border border-border-color"
                       >
-                        浏览
+                        {t('common.browse')}
                       </button>
                     </div>
                     <p className="mt-1 text-xs text-fg-muted">
-                      示例：C:\Users\xxx\AppData\Local\Microsoft\WinGet\Packages\Anthropic.ClaudeCode_...
+                      {t('settings.claude.claudePathExample')}
                     </p>
                   </div>
 
-                  {/* 额外 PATH */}
-                  <div>
+                  {/* Extra PATH */}
+                  <div className="min-w-0">
                     <label className="block text-sm text-fg-secondary mb-1">
-                      额外 PATH 路径（可选）
+                      {t('settings.claude.extraPaths')}
                     </label>
                     <input
                       type="text"
@@ -335,23 +414,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                           extraPaths: e.target.value,
                         }))
                       }
-                      placeholder="多个路径用分号分隔，如：C:\path1;D:\path2"
+                      placeholder={t('settings.claude.extraPathsPlaceholder')}
                       className={cn(
-                        'w-full px-2 py-1.5 rounded text-sm',
+                        'w-full min-w-0 px-2 py-1.5 rounded text-sm',
                         'bg-bg-tertiary border border-border-color',
                         'text-fg-primary placeholder-fg-muted',
                         'focus:border-border-active focus:outline-none'
                       )}
                     />
                     <p className="mt-1 text-xs text-fg-muted">
-                      这些路径会被添加到终端的 PATH 环境变量中
+                      {t('settings.claude.extraPathsNote')}
                     </p>
                   </div>
 
-                  {/* 自动检测结果 */}
+                  {/* Auto-detected paths */}
                   <div className="p-3 bg-bg-tertiary rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs text-fg-muted">自动检测到的路径：</p>
+                      <p className="text-xs text-fg-muted">{t('settings.claude.autoDetected')}</p>
                       <button
                         onClick={handleRedetect}
                         disabled={isDetecting}
@@ -362,7 +441,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                           isDetecting && 'opacity-50 cursor-not-allowed'
                         )}
                       >
-                        {isDetecting ? '检测中...' : '重新检测'}
+                        {isDetecting ? t('settings.claude.detecting') : t('settings.claude.redetect')}
                       </button>
                     </div>
                     <div className="text-xs space-y-1">
@@ -373,27 +452,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                           </p>
                         ))
                       ) : (
-                        <p className="text-yellow-400">未检测到 Claude CLI 路径，请手动配置</p>
+                        <p className="text-yellow-400">{t('settings.claude.notDetected')}</p>
                       )}
                     </div>
                   </div>
 
-                  {/* 当前状态 */}
-                  <div className="p-3 bg-bg-tertiary rounded-lg">
-                    <p className="text-xs text-fg-muted mb-2">当前配置状态：</p>
+                  {/* Current status */}
+                  <div className="p-3 bg-bg-tertiary rounded-lg overflow-hidden">
+                    <p className="text-xs text-fg-muted mb-2">{t('settings.claude.currentStatus')}</p>
                     <div className="text-xs space-y-1">
-                      <p>
-                        <span className="text-fg-secondary">Claude 路径（手动）：</span>
-                        <span className="text-fg-primary">
-                          {localSettings.claudePath || '(未配置，使用自动检测)'}
+                      <div className="flex gap-1">
+                        <span className="text-fg-secondary flex-shrink-0">{t('settings.claude.manualPath')}</span>
+                        <span className="text-fg-primary truncate" title={localSettings.claudePath || ''}>
+                          {localSettings.claudePath || t('settings.claude.notConfigured')}
                         </span>
-                      </p>
-                      <p>
-                        <span className="text-fg-secondary">额外 PATH：</span>
-                        <span className="text-fg-primary">
-                          {localSettings.extraPaths || '(无)'}
+                      </div>
+                      <div className="flex gap-1">
+                        <span className="text-fg-secondary flex-shrink-0">{t('settings.claude.extraPathLabel')}</span>
+                        <span className="text-fg-primary truncate" title={localSettings.extraPaths || ''}>
+                          {localSettings.extraPaths || t('settings.claude.none')}
                         </span>
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -401,29 +480,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             </>
           )}
 
-          {/* 按钮 */}
-          <div className="flex justify-end gap-2 pt-4 border-t border-border-color">
-            <button
-              onClick={onClose}
-              className={cn(
-                'px-4 py-2 rounded',
-                'text-fg-secondary hover:text-fg-primary',
-                'hover:bg-bg-hover transition-colors'
-              )}
-            >
-              取消
-            </button>
-            <button
-              onClick={handleSave}
-              className={cn(
-                'px-4 py-2 rounded',
-                'bg-accent-primary text-white',
-                'hover:bg-accent-secondary transition-colors'
-              )}
-            >
-              保存
-            </button>
-          </div>
+          {/* Save success hint */}
+          {showSaveHint && (
+            <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg">
+              <p className="text-sm text-green-400 font-medium mb-1">{t('settings.saved.title')}</p>
+              <p className="text-xs text-fg-secondary">
+                {t('settings.saved.claudeNote')}
+              </p>
+              <button
+                onClick={onClose}
+                className={cn(
+                  'mt-2 px-3 py-1 rounded text-sm',
+                  'bg-green-700 hover:bg-green-600 text-white transition-colors'
+                )}
+              >
+                {t('common.gotIt')}
+              </button>
+            </div>
+          )}
+
+          {/* Buttons */}
+          {!showSaveHint && (
+            <div className="flex justify-end gap-2 pt-4 border-t border-border-color">
+              <button
+                onClick={onClose}
+                className={cn(
+                  'px-4 py-2 rounded',
+                  'text-fg-secondary hover:text-fg-primary',
+                  'hover:bg-bg-hover transition-colors'
+                )}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleSave}
+                className={cn(
+                  'px-4 py-2 rounded',
+                  'bg-accent-primary text-white',
+                  'hover:bg-accent-secondary transition-colors'
+                )}
+              >
+                {t('common.save')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </Modal>

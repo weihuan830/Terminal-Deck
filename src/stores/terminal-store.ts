@@ -61,6 +61,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   fontSize: 14,
   fontFamily: 'Consolas, "Courier New", monospace',
+  language: 'zh-CN',
   defaultShell: 'default',
   defaultCwd: '',
   scrollbackLines: 10000,

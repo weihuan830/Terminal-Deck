@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTerminalStore } from '../../stores/terminal-store';
 import { LayoutPicker } from '../common/LayoutPicker';
 import type { TerminalGroup, GridLayout } from '../../types';
@@ -9,6 +10,7 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
+  const { t } = useTranslation();
   const { addTerminal, setGroupLayout, updateGroup, removeGroup } = useTerminalStore();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(group.name);
@@ -16,7 +18,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
   const [pickerPosition, setPickerPosition] = useState({ top: 0, right: 0 });
   const layoutButtonRef = useRef<HTMLButtonElement>(null);
 
-  // 计算下拉菜单位置
+  // Calculate dropdown position
   useEffect(() => {
     if (showLayoutPicker && layoutButtonRef.current) {
       const rect = layoutButtonRef.current.getBoundingClientRect();
@@ -27,7 +29,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
     }
   }, [showLayoutPicker]);
 
-  // 处理添加终端
+  // Handle add terminal
   const handleAddTerminal = async () => {
     const cwd = await window.electronAPI.dialog.selectDirectory();
     if (cwd) {
@@ -38,7 +40,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
     }
   };
 
-  // 处理名称编辑
+  // Handle name edit
   const handleNameSubmit = () => {
     if (editName.trim()) {
       updateGroup(group.id, { name: editName.trim() });
@@ -48,30 +50,30 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
     setIsEditingName(false);
   };
 
-  // 处理布局选择
+  // Handle layout selection
   const handleLayoutSelect = (layout: GridLayout) => {
     setGroupLayout(group.id, layout);
     setShowLayoutPicker(false);
   };
 
-  // 处理删除分组
+  // Handle delete group
   const handleDeleteGroup = () => {
-    if (window.confirm(`确定要删除分组 "${group.name}" 吗？所有终端将被关闭。`)) {
+    if (window.confirm(t('group.deleteConfirm', { name: group.name }))) {
       removeGroup(group.id);
     }
   };
 
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-bg-secondary border-b border-border-color">
-      {/* 左侧：分组名称 */}
+      {/* Left: Group name */}
       <div className="flex items-center gap-3">
-        {/* 颜色指示器 */}
+        {/* Color indicator */}
         <div
           className="w-3 h-3 rounded-full"
           style={{ backgroundColor: group.color }}
         />
 
-        {/* 分组名称 */}
+        {/* Group name */}
         {isEditingName ? (
           <input
             type="text"
@@ -97,15 +99,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
           </h2>
         )}
 
-        {/* 终端数量 */}
+        {/* Terminal count */}
         <span className="text-sm text-fg-muted">
           ({group.terminals.length} / {group.layout.rows * group.layout.cols})
         </span>
       </div>
 
-      {/* 右侧：操作按钮 */}
+      {/* Right: Action buttons */}
       <div className="flex items-center gap-2">
-        {/* 布局选择器 */}
+        {/* Layout picker */}
         <div className="relative">
           <button
             ref={layoutButtonRef}
@@ -126,12 +128,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
 
           {showLayoutPicker && (
             <>
-              {/* 背景遮罩 */}
+              {/* Overlay */}
               <div
                 className="fixed inset-0 z-40"
                 onClick={() => setShowLayoutPicker(false)}
               />
-              {/* 下拉菜单 - 使用固定定位和计算位置 */}
+              {/* Dropdown - fixed position */}
               <div
                 className="fixed z-50"
                 style={{
@@ -148,7 +150,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
           )}
         </div>
 
-        {/* 添加终端按钮 */}
+        {/* Add terminal button */}
         <button
           onClick={handleAddTerminal}
           className={cn(
@@ -160,10 +162,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          添加终端
+          {t('terminal.addTerminal')}
         </button>
 
-        {/* 删除分组按钮 */}
+        {/* Delete group button */}
         <button
           onClick={handleDeleteGroup}
           className={cn(
@@ -171,7 +173,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
             'text-fg-muted hover:text-status-error',
             'hover:bg-bg-hover transition-colors'
           )}
-          title="删除分组"
+          title={t('group.deleteGroup')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

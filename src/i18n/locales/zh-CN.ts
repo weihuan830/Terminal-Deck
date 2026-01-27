@@ -28,6 +28,7 @@ export default {
     },
     addTerminal: '添加终端',
     closeTerminal: '关闭终端',
+    closeTerminalConfirm: '确定要关闭终端 "{{name}}" 吗？终端内容将会丢失。',
     terminalCount: '{{count}} 终端',
     runningCount: '{{count}} 运行中',
     pagination: {

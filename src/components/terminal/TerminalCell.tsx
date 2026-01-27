@@ -58,11 +58,13 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
     setIsEditing(false);
   }, [editLabel, groupId, terminal.id, terminal.label, updateTerminal]);
 
-  // Handle close
+  // Handle close with confirmation
   const handleClose = useCallback(async () => {
-    await window.electronAPI.terminal.kill(terminal.id);
-    removeTerminal(groupId, terminal.id);
-  }, [groupId, terminal.id, removeTerminal]);
+    if (window.confirm(t('terminal.closeTerminalConfirm', { name: terminal.label }))) {
+      await window.electronAPI.terminal.kill(terminal.id);
+      removeTerminal(groupId, terminal.id);
+    }
+  }, [groupId, terminal.id, terminal.label, removeTerminal, t]);
 
   // Get status color
   const getStatusColor = () => {

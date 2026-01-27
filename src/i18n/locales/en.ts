@@ -28,6 +28,7 @@ export default {
     },
     addTerminal: 'Add Terminal',
     closeTerminal: 'Close terminal',
+    closeTerminalConfirm: 'Are you sure you want to close terminal "{{name}}"? Terminal content will be lost.',
     terminalCount: '{{count}} terminals',
     runningCount: '{{count}} running',
     pagination: {

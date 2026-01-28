@@ -14,12 +14,13 @@ A cross-platform multi-terminal manager designed for AI coding agents. Run and m
 
 - **Multi-Terminal Grid** - Run multiple terminal instances side by side in customizable grid layouts (2x2, 2x3, 3x3, up to 4x4)
 - **Group Management** - Organize terminals into groups by project or task, switch between groups instantly
-- **Drag & Drop** - Move terminals between groups with drag and drop
+- **Drag & Drop** - Move terminals between groups with drag and drop (preserves terminal session)
 - **Custom Labels** - Double-click to rename any terminal for easy identification
 - **Real-time Status** - Visual indicators show terminal status (running, idle, exited, error)
 - **Keyboard Shortcuts** - Full keyboard navigation support
 - **Cross-Platform** - Native support for Windows, macOS, and Linux
 - **Persistent Config** - Automatically saves and restores your groups and settings
+- **Multi-Language Support** - Interface available in Chinese and English (i18n)
 
 ## Installation
 
@@ -98,6 +99,7 @@ Choose from multiple grid layouts to organize your terminals:
 - **node-pty** - PTY process management
 - **Tailwind CSS** - Styling
 - **Vite** - Build tool
+- **i18next** - Internationalization framework
 
 ## Project Structure
 
@@ -111,6 +113,7 @@ terminal-deck/
 ├── src/                # React renderer process
 │   ├── components/     # UI components
 │   ├── hooks/          # Custom React hooks
+│   ├── i18n/           # Internationalization (zh-CN, en)
 │   ├── stores/         # Zustand state stores
 │   ├── types/          # TypeScript types
 │   └── utils/          # Utility functions

@@ -40,7 +40,13 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
     terminalDataRef.current = terminalData;
   }
 
+  // 使用 ref 保存 groupId，这样 updateTerminal 可以获取最新值
+  // 但不会触发 effect 重新运行
+  const groupIdRef = useRef(groupId);
+  groupIdRef.current = groupId;
+
   // 初始化 - 只在组件挂载时运行一次
+  // 注意：不依赖 groupId，因为终端移动到其他分组时不应该重建 PTY
   useEffect(() => {
     // 使用 mounted 标志防止 React StrictMode 双重调用
     let mounted = true;
@@ -131,17 +137,17 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
       if (!mounted) return;
 
       if (result.success) {
-        updateTerminal(groupId, terminalId, { status: 'running' });
+        updateTerminal(groupIdRef.current, terminalId, { status: 'running' });
         isReadyRef.current = true;
 
         // 如果原路径不存在，使用了回退目录，显示警告
         if (result.fallbackCwd) {
           terminal.writeln(`\x1b[33m[警告] 原工作目录不存在，已切换到: ${result.fallbackCwd}\x1b[0m\r\n`);
           // 更新 store 中的 cwd
-          updateTerminal(groupId, terminalId, { cwd: result.fallbackCwd });
+          updateTerminal(groupIdRef.current, terminalId, { cwd: result.fallbackCwd });
         }
       } else {
-        updateTerminal(groupId, terminalId, { status: 'error' });
+        updateTerminal(groupIdRef.current, terminalId, { status: 'error' });
         terminal.writeln(`\r\n\x1b[31mError: ${result.error}\x1b[0m`);
         isReadyRef.current = true;
       }
@@ -180,8 +186,9 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
       // 注意：不重置 isInitializedRef，因为组件卸载后不会再挂载相同的终端
       isReadyRef.current = false;
     };
-    // 只在 terminalId 和 groupId 变化时重新初始化
-  }, [terminalId, groupId]);
+    // 只依赖 terminalId，不依赖 groupId
+    // 终端移动到其他分组时不应该重建 PTY 进程
+  }, [terminalId]);
 
   // 监听终端数据 - 带 resize 缓冲
   useEffect(() => {
@@ -216,7 +223,8 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
         exitCode?: number;
       }) => {
         if (id === terminalId) {
-          updateTerminal(groupId, terminalId, {
+          // 使用 ref 获取最新的 groupId，避免依赖 groupId 导致重新订阅
+          updateTerminal(groupIdRef.current, terminalId, {
             status: status as TerminalStatus,
             exitCode,
           });
@@ -225,7 +233,7 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
     );
 
     return unsubscribe;
-  }, [terminalId, groupId, updateTerminal]);
+  }, [terminalId, updateTerminal]);
 
   // 处理容器大小变化
   // 策略：使用较长的防抖时间，等待 resize 完全稳定后再同步

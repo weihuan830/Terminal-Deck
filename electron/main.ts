@@ -21,7 +21,7 @@ function createMainWindow(): void {
     height: 900,
     minWidth: 800,
     minHeight: 600,
-    title: 'Claude Terminal Manager',
+    title: 'Terminal Deck',
     backgroundColor: '#1e1e1e',
     webPreferences: {
       nodeIntegration: false,

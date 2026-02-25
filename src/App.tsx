@@ -9,6 +9,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 const App: React.FC = () => {
   const { loadFromStorage, isLoading, getActiveGroup, addTerminal, moveTerminal } = useTerminalStore();
+  const settings = useTerminalStore((state) => state.settings);
   const [showNewGroupModal, setShowNewGroupModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -64,6 +65,23 @@ const App: React.FC = () => {
     onNewTerminal: handleAddTerminal,
     onSettings: () => setShowSettingsModal(true),
   });
+
+  // 应用主题 class
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.theme === 'light') {
+      root.classList.add('light');
+    } else if (settings.theme === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.classList.toggle('light', !prefersDark);
+      const handler = (e: MediaQueryListEvent) => root.classList.toggle('light', !e.matches);
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    } else {
+      root.classList.remove('light');
+    }
+  }, [settings.theme]);
 
   // 初始化加载数据
   useEffect(() => {

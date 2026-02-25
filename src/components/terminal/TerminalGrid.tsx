@@ -30,11 +30,18 @@ export const TerminalGrid: React.FC<TerminalGridProps> = ({ groupId, isActive })
     setCurrentPage(validCurrentPage);
   }
 
-  // Terminals on current page
-  const startIndex = validCurrentPage * terminalsPerPage;
-  const endIndex = startIndex + terminalsPerPage;
-  const visibleTerminals = terminals.slice(startIndex, endIndex);
-  const emptySlots = Math.max(0, terminalsPerPage - visibleTerminals.length);
+  // 按页分组所有终端（每页都保持挂载，仅通过 CSS 控制可见性）
+  const pages: { terminals: typeof terminals; emptySlots: number; pageIndex: number }[] = [];
+  for (let p = 0; p < totalPages; p++) {
+    const start = p * terminalsPerPage;
+    const end = start + terminalsPerPage;
+    const pageTerminals = terminals.slice(start, end);
+    pages.push({
+      terminals: pageTerminals,
+      emptySlots: Math.max(0, terminalsPerPage - pageTerminals.length),
+      pageIndex: p,
+    });
+  }
 
   // Handle add terminal
   const handleAddTerminal = async () => {
@@ -58,51 +65,61 @@ export const TerminalGrid: React.FC<TerminalGridProps> = ({ groupId, isActive })
 
   return (
     <div className="h-full flex flex-col">
-      {/* Terminal grid */}
-      <div
-        className="flex-1 p-4 gap-4 min-h-0 overflow-hidden"
-        style={{
-          display: 'grid',
-          gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
-          gridTemplateColumns: `repeat(${layout.cols}, 1fr)`,
-        }}
-      >
-        {/* Visible terminals */}
-        {visibleTerminals.map((terminal) => (
-          <TerminalCell
-            key={terminal.id}
-            terminal={terminal}
-            groupId={groupId}
-            isActive={isActive && terminal.id === activeTerminalId}
-            onFocus={() => setActiveTerminal(terminal.id)}
-          />
-        ))}
+      {/* Terminal grid — 所有页都保持挂载，通过 visibility 控制显示 */}
+      <div className="flex-1 min-h-0 overflow-hidden relative">
+        {pages.map((page) => {
+          const isCurrentPage = page.pageIndex === validCurrentPage;
+          return (
+            <div
+              key={page.pageIndex}
+              className="absolute inset-0 p-4 gap-4"
+              style={{
+                display: 'grid',
+                gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
+                gridTemplateColumns: `repeat(${layout.cols}, 1fr)`,
+                visibility: isCurrentPage ? 'visible' : 'hidden',
+                pointerEvents: isCurrentPage ? 'auto' : 'none',
+              }}
+            >
+              {/* Terminals on this page */}
+              {page.terminals.map((terminal) => (
+                <TerminalCell
+                  key={terminal.id}
+                  terminal={terminal}
+                  groupId={groupId}
+                  isActive={isActive && isCurrentPage && terminal.id === activeTerminalId}
+                  onFocus={() => setActiveTerminal(terminal.id)}
+                />
+              ))}
 
-        {/* Empty slots - add terminal buttons */}
-        {Array.from({ length: emptySlots }).map((_, index) => (
-          <button
-            key={`empty-${index}`}
-            onClick={handleAddTerminal}
-            className={cn(
-              'flex items-center justify-center',
-              'border-2 border-dashed border-border-color rounded-lg',
-              'text-fg-muted hover:text-fg-secondary hover:border-fg-muted',
-              'transition-colors'
-            )}
-          >
-            <div className="text-center">
-              <svg
-                className="w-8 h-8 mx-auto mb-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="text-sm">{t('terminal.addTerminal')}</span>
+              {/* Empty slots - add terminal buttons */}
+              {Array.from({ length: page.emptySlots }).map((_, index) => (
+                <button
+                  key={`empty-${page.pageIndex}-${index}`}
+                  onClick={handleAddTerminal}
+                  className={cn(
+                    'flex items-center justify-center',
+                    'border-2 border-dashed border-border-color rounded-lg',
+                    'text-fg-muted hover:text-fg-secondary hover:border-fg-muted',
+                    'transition-colors'
+                  )}
+                >
+                  <div className="text-center">
+                    <svg
+                      className="w-8 h-8 mx-auto mb-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span className="text-sm">{t('terminal.addTerminal')}</span>
+                  </div>
+                </button>
+              ))}
             </div>
-          </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* Pagination - only show when multiple pages */}

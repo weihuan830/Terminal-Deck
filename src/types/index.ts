@@ -10,6 +10,9 @@ export interface GridLayout {
  * 预设布局
  */
 export const PRESET_LAYOUTS: Record<string, GridLayout> = {
+  '1x1': { rows: 1, cols: 1 },
+  '1x2': { rows: 1, cols: 2 },
+  '2x1': { rows: 2, cols: 1 },
   '2x2': { rows: 2, cols: 2 },
   '2x3': { rows: 2, cols: 3 },
   '2x4': { rows: 2, cols: 4 },
@@ -70,10 +73,9 @@ export interface AppSettings {
   defaultCwd: string;
   scrollbackLines: number;
 
-  // Claude CLI 配置
-  claudePath?: string;       // Claude 可执行文件路径（用户手动配置）
-  extraPaths?: string;       // 额外的 PATH 路径（分号分隔）
-  detectedClaudePaths?: string[];  // 自动检测到的 Claude 路径（启动时检测）
+  // 环境配置
+  customPaths?: string;      // 额外 PATH 路径（分号/冒号分隔）
+  customEnvVars?: string;    // 自定义环境变量，每行一个 KEY=VALUE
 
   // 快捷键
   shortcuts: Record<string, string>;

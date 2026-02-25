@@ -43,7 +43,6 @@ const electronAPI = {
   config: {
     get: () => ipcRenderer.invoke('config:get'),
     set: (settings: unknown) => ipcRenderer.invoke('config:set', { settings }),
-    detectClaude: () => ipcRenderer.invoke('config:detectClaude'),
   },
 
   // 分组操作

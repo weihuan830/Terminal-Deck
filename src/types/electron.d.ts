@@ -9,9 +9,8 @@ export interface ElectronAPI {
       shell: string;
       cols: number;
       rows: number;
-      claudePath?: string;
-      extraPaths?: string;
-      detectedClaudePaths?: string[];
+      customPaths?: string;
+      customEnvVars?: string;
     }) => Promise<{ success: boolean; error?: string; fallbackCwd?: string; }>;
 
     write: (terminalId: string, data: string) => void;
@@ -37,7 +36,6 @@ export interface ElectronAPI {
   config: {
     get: () => Promise<AppSettings>;
     set: (settings: Partial<AppSettings>) => Promise<AppSettings>;
-    detectClaude: () => Promise<string[]>;
   };
 
   // 分组操作

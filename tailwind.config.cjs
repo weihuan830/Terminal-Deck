@@ -8,26 +8,26 @@ module.exports = {
     extend: {
       colors: {
         // 背景色
-        'bg-primary': '#1e1e1e',
-        'bg-secondary': '#252526',
-        'bg-tertiary': '#2d2d2d',
-        'bg-hover': '#3c3c3c',
-        'bg-active': '#094771',
+        'bg-primary': 'var(--bg-primary)',
+        'bg-secondary': 'var(--bg-secondary)',
+        'bg-tertiary': 'var(--bg-tertiary)',
+        'bg-hover': 'var(--bg-hover)',
+        'bg-active': 'var(--bg-active)',
         // 前景色
-        'fg-primary': '#cccccc',
-        'fg-secondary': '#858585',
-        'fg-muted': '#6e6e6e',
+        'fg-primary': 'var(--fg-primary)',
+        'fg-secondary': 'var(--fg-secondary)',
+        'fg-muted': 'var(--fg-muted)',
         // 边框
-        'border-color': '#3c3c3c',
-        'border-active': '#007acc',
+        'border-color': 'var(--border-color)',
+        'border-active': 'var(--border-active)',
         // 状态色
-        'status-running': '#89d185',
-        'status-idle': '#6e6e6e',
-        'status-error': '#f14c4c',
-        'status-exited': '#cca700',
+        'status-running': 'var(--status-running)',
+        'status-idle': 'var(--status-idle)',
+        'status-error': 'var(--status-error)',
+        'status-exited': 'var(--status-exited)',
         // 强调色
-        'accent-primary': '#007acc',
-        'accent-secondary': '#0e639c',
+        'accent-primary': 'var(--accent-primary)',
+        'accent-secondary': 'var(--accent-secondary)',
       },
     },
   },

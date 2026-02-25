@@ -1,7 +1,5 @@
 import Store from 'electron-store';
 import { ipcMain } from 'electron';
-import * as fs from 'fs';
-import * as path from 'path';
 import type { AppSettings, TerminalGroup } from '../src/types';
 
 interface PersistedData {
@@ -85,11 +83,6 @@ export class ConfigManager {
     ipcMain.handle('groups:save', (_, { groups }) => {
       return this.saveGroups(groups);
     });
-
-    // 重新检测 Claude 路径
-    ipcMain.handle('config:detectClaude', () => {
-      return this.runClaudeDetection();
-    });
   }
 
   /**
@@ -140,82 +133,4 @@ export class ConfigManager {
     return this.store.path;
   }
 
-  /**
-   * 自动检测 Claude CLI 安装路径（仅 Windows）
-   */
-  detectClaudePaths(): string[] {
-    if (process.platform !== 'win32') {
-      return [];
-    }
-
-    const detectedPaths: string[] = [];
-    const userProfile = process.env.USERPROFILE || '';
-    const localAppData = process.env.LOCALAPPDATA || `${userProfile}\\AppData\\Local`;
-    const appData = process.env.APPDATA || `${userProfile}\\AppData\\Roaming`;
-
-    // 1. 检测 WinGet 安装（动态扫描目录名，因为不同版本后缀可能不同）
-    const wingetPackagesDir = path.join(localAppData, 'Microsoft', 'WinGet', 'Packages');
-    try {
-      if (fs.existsSync(wingetPackagesDir)) {
-        const packages = fs.readdirSync(wingetPackagesDir);
-        for (const pkg of packages) {
-          if (pkg.toLowerCase().includes('claude')) {
-            const pkgPath = path.join(wingetPackagesDir, pkg);
-            const claudeExe = path.join(pkgPath, 'claude.exe');
-            if (fs.existsSync(claudeExe)) {
-              detectedPaths.push(pkgPath);
-              console.log(`[Claude Detection] Found WinGet installation: ${pkgPath}`);
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to scan WinGet packages:', e);
-    }
-
-    // 2. 检测 npm 全局安装
-    const npmGlobalPath = path.join(appData, 'npm');
-    const npmClaudeCmd = path.join(npmGlobalPath, 'claude.cmd');
-    if (fs.existsSync(npmClaudeCmd)) {
-      detectedPaths.push(npmGlobalPath);
-      console.log(`[Claude Detection] Found npm installation: ${npmGlobalPath}`);
-    }
-
-    // 3. WinGet Links 目录
-    const wingetLinksDir = path.join(localAppData, 'Microsoft', 'WinGet', 'Links');
-    if (fs.existsSync(wingetLinksDir)) {
-      detectedPaths.push(wingetLinksDir);
-    }
-
-    // 4. 常见的 Node.js 路径
-    const nodePaths = [
-      path.join(localAppData, 'Programs', 'nodejs'),
-      path.join(userProfile, 'AppData', 'Local', 'Programs', 'nodejs'),
-      'C:\\Program Files\\nodejs',
-    ];
-    for (const nodePath of nodePaths) {
-      if (fs.existsSync(nodePath)) {
-        detectedPaths.push(nodePath);
-      }
-    }
-
-    return detectedPaths;
-  }
-
-  /**
-   * 执行 Claude 路径检测并保存到配置
-   */
-  runClaudeDetection(): string[] {
-    const detectedPaths = this.detectClaudePaths();
-
-    // 保存到配置
-    const currentSettings = this.getSettings();
-    this.setSettings({
-      ...currentSettings,
-      detectedClaudePaths: detectedPaths,
-    });
-
-    console.log(`[Claude Detection] Detected ${detectedPaths.length} paths:`, detectedPaths);
-    return detectedPaths;
-  }
 }

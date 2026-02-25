@@ -13,7 +13,7 @@ export const LayoutPicker: React.FC<LayoutPickerProps> = ({ currentLayout, onSel
   return (
     <div className="bg-bg-tertiary border border-border-color rounded-lg p-3 shadow-xl">
       <p className="text-xs text-fg-muted mb-2">选择布局 (行x列)</p>
-      <div className="grid grid-cols-3 gap-2" style={{ width: '200px' }}>
+      <div className="grid grid-cols-4 gap-2" style={{ width: '260px' }}>
         {layouts.map(([name, layout]) => {
           const isSelected =
             layout.rows === currentLayout.rows && layout.cols === currentLayout.cols;

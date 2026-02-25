@@ -2,6 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 主题 CSS 变量 */
+:root {
+  /* 背景色 */
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #252526;
+  --bg-tertiary: #2d2d2d;
+  --bg-hover: #3c3c3c;
+  --bg-active: #094771;
+  /* 前景色 */
+  --fg-primary: #cccccc;
+  --fg-secondary: #858585;
+  --fg-muted: #6e6e6e;
+  /* 边框 */
+  --border-color: #3c3c3c;
+  --border-active: #007acc;
+  /* 状态色 */
+  --status-running: #89d185;
+  --status-idle: #6e6e6e;
+  --status-error: #f14c4c;
+  --status-exited: #cca700;
+  /* 强调色 */
+  --accent-primary: #007acc;
+  --accent-secondary: #0e639c;
+  /* 滚动条 */
+  --scrollbar-track: #1e1e1e;
+  --scrollbar-thumb: #3c3c3c;
+  --scrollbar-thumb-hover: #4c4c4c;
+  /* tooltip */
+  --tooltip-bg: #3c3c3c;
+  --tooltip-fg: #cccccc;
+}
+
+.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f3f3;
+  --bg-tertiary: #e8e8e8;
+  --bg-hover: #d6d6d6;
+  --bg-active: #c4dff6;
+  --fg-primary: #1e1e1e;
+  --fg-secondary: #616161;
+  --fg-muted: #9e9e9e;
+  --border-color: #d4d4d4;
+  --border-active: #007acc;
+  --status-running: #388e3c;
+  --status-idle: #9e9e9e;
+  --status-error: #d32f2f;
+  --status-exited: #f57f17;
+  --accent-primary: #007acc;
+  --accent-secondary: #005a9e;
+  --scrollbar-track: #f3f3f3;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a8a8a8;
+  --tooltip-bg: #e8e8e8;
+  --tooltip-fg: #1e1e1e;
+}
+
 /* 全局样式 */
 * {
   margin: 0;
@@ -20,8 +76,8 @@ body,
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
     'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #1e1e1e;
-  color: #cccccc;
+  background-color: var(--bg-primary);
+  color: var(--fg-primary);
 }
 
 /* 滚动条样式 */
@@ -31,16 +87,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3c3c3c;
+  background: var(--scrollbar-thumb);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4c4c4c;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* xterm 容器样式 */
@@ -64,8 +120,8 @@ body {
   left: 50%;
   transform: translateX(-50%);
   padding: 4px 8px;
-  background: #3c3c3c;
-  color: #cccccc;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
   font-size: 12px;
   white-space: nowrap;
   border-radius: 4px;

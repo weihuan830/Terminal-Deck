@@ -11,6 +11,63 @@ interface UseTerminalOptions {
   groupId: string;
 }
 
+const darkTerminalTheme = {
+  background: '#1e1e1e',
+  foreground: '#d4d4d4',
+  cursor: '#ffffff',
+  cursorAccent: '#000000',
+  selectionBackground: '#264f78',
+  black: '#000000',
+  red: '#cd3131',
+  green: '#0dbc79',
+  yellow: '#e5e510',
+  blue: '#2472c8',
+  magenta: '#bc3fbc',
+  cyan: '#11a8cd',
+  white: '#e5e5e5',
+  brightBlack: '#666666',
+  brightRed: '#f14c4c',
+  brightGreen: '#23d18b',
+  brightYellow: '#f5f543',
+  brightBlue: '#3b8eea',
+  brightMagenta: '#d670d6',
+  brightCyan: '#29b8db',
+  brightWhite: '#e5e5e5',
+};
+
+const lightTerminalTheme = {
+  background: '#ffffff',
+  foreground: '#1e1e1e',
+  cursor: '#000000',
+  cursorAccent: '#ffffff',
+  selectionBackground: '#add6ff',
+  black: '#000000',
+  red: '#cd3131',
+  green: '#008000',
+  yellow: '#949800',
+  blue: '#0451a5',
+  magenta: '#bc05bc',
+  cyan: '#0598bc',
+  white: '#555555',
+  brightBlack: '#666666',
+  brightRed: '#cd3131',
+  brightGreen: '#14ce14',
+  brightYellow: '#b5ba00',
+  brightBlue: '#0451a5',
+  brightMagenta: '#bc05bc',
+  brightCyan: '#0598bc',
+  brightWhite: '#a5a5a5',
+};
+
+function getTerminalTheme(theme: string): typeof darkTerminalTheme {
+  if (theme === 'light') return lightTerminalTheme;
+  if (theme === 'system') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return prefersDark ? darkTerminalTheme : lightTerminalTheme;
+  }
+  return darkTerminalTheme;
+}
+
 export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
@@ -63,29 +120,7 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
         cursorStyle: 'block',
         fontSize: settings.fontSize,
         fontFamily: settings.fontFamily,
-        theme: {
-          background: '#1e1e1e',
-          foreground: '#d4d4d4',
-          cursor: '#ffffff',
-          cursorAccent: '#000000',
-          selectionBackground: '#264f78',
-          black: '#000000',
-          red: '#cd3131',
-          green: '#0dbc79',
-          yellow: '#e5e510',
-          blue: '#2472c8',
-          magenta: '#bc3fbc',
-          cyan: '#11a8cd',
-          white: '#e5e5e5',
-          brightBlack: '#666666',
-          brightRed: '#f14c4c',
-          brightGreen: '#23d18b',
-          brightYellow: '#f5f543',
-          brightBlue: '#3b8eea',
-          brightMagenta: '#d670d6',
-          brightCyan: '#29b8db',
-          brightWhite: '#e5e5e5',
-        },
+        theme: getTerminalTheme(settings.theme),
         scrollback: settings.scrollbackLines,
         allowTransparency: true,
       });
@@ -129,9 +164,8 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
         shell: data.shell || 'default',
         cols: terminal.cols,
         rows: terminal.rows,
-        claudePath: settings.claudePath,
-        extraPaths: settings.extraPaths,
-        detectedClaudePaths: settings.detectedClaudePaths,
+        customPaths: settings.customPaths,
+        customEnvVars: settings.customEnvVars,
       });
 
       if (!mounted) return;
@@ -189,6 +223,13 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
     // 只依赖 terminalId，不依赖 groupId
     // 终端移动到其他分组时不应该重建 PTY 进程
   }, [terminalId]);
+
+  // 主题变化时更新 xterm 主题
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.options.theme = getTerminalTheme(settings.theme);
+    }
+  }, [settings.theme]);
 
   // 监听终端数据 - 带 resize 缓冲
   useEffect(() => {

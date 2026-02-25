@@ -2,6 +2,7 @@ import * as pty from 'node-pty';
 import { ipcMain, BrowserWindow } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
+import * as path from 'path';
 import { execSync } from 'child_process';
 
 interface PtyProcess {
@@ -56,12 +57,11 @@ export class TerminalManager extends EventEmitter {
     shell: string;
     cols: number;
     rows: number;
-    claudePath?: string;    // 用户配置的 Claude 路径
-    extraPaths?: string;    // 用户配置的额外 PATH
-    detectedClaudePaths?: string[];  // 启动时检测到的路径
+    customPaths?: string;       // 自定义 PATH 路径
+    customEnvVars?: string;     // 自定义环境变量
   }): { success: boolean; error?: string; fallbackCwd?: string; } {
     try {
-      const { terminalId, cwd, shell, cols, rows, claudePath, extraPaths } = options;
+      const { terminalId, cwd, shell, cols, rows } = options;
 
       // 检测 shell
       const shellPath = this.resolveShell(shell);
@@ -87,8 +87,8 @@ export class TerminalManager extends EventEmitter {
         }
       }
 
-      // 获取增强的环境变量（包含用户配置和启动时检测的 PATH）
-      const enhancedEnv = this.getEnhancedEnv(claudePath, extraPaths, options.detectedClaudePaths);
+      // 获取增强的环境变量（包含用户自定义 PATH 和环境变量）
+      const enhancedEnv = this.getEnhancedEnv(options.customPaths, options.customEnvVars);
 
       // 创建 PTY
       const ptyProcess = pty.spawn(shellPath, shellArgs, {
@@ -177,48 +177,44 @@ export class TerminalManager extends EventEmitter {
   }
 
   /**
-   * 获取完整的环境变量（包括用户配置和启动时检测的 Claude 路径）
+   * 获取增强的环境变量（包含用户自定义 PATH 和环境变量）
    */
-  private getEnhancedEnv(claudePath?: string, extraPaths?: string, detectedClaudePaths?: string[]): { [key: string]: string } {
+  private getEnhancedEnv(customPaths?: string, customEnvVars?: string): { [key: string]: string } {
     const env = { ...process.env } as { [key: string]: string };
+    const delimiter = path.delimiter; // Windows: ';', macOS/Linux: ':'
 
-    if (process.platform === 'win32') {
-      const pathsToAdd: string[] = [];
+    // 注入自定义 PATH
+    if (customPaths && customPaths.trim()) {
+      const pathsToAdd = customPaths.split(delimiter).map(p => p.trim()).filter(p => p);
+      const validPaths = pathsToAdd.filter(p => fs.existsSync(p));
 
-      // 1. 优先使用用户配置的 Claude 路径
-      if (claudePath && claudePath.trim()) {
-        const trimmedPath = claudePath.trim();
-        if (fs.existsSync(trimmedPath)) {
-          pathsToAdd.push(trimmedPath);
-        }
-      }
+      if (validPaths.length > 0) {
+        const currentPath = env.PATH || env.Path || '';
+        const uniquePaths = validPaths.filter(p => !currentPath.includes(p));
 
-      // 2. 添加用户配置的额外 PATH
-      if (extraPaths && extraPaths.trim()) {
-        const extras = extraPaths.split(';').map(p => p.trim()).filter(p => p);
-        for (const extra of extras) {
-          if (fs.existsSync(extra)) {
-            pathsToAdd.push(extra);
+        if (uniquePaths.length > 0) {
+          env.PATH = [...uniquePaths, currentPath].join(delimiter);
+          if (process.platform === 'win32') {
+            env.Path = env.PATH;
           }
         }
       }
+    }
 
-      // 3. 如果用户没有配置 Claude 路径，则使用启动时检测到的路径
-      if (!claudePath || !claudePath.trim()) {
-        if (detectedClaudePaths && detectedClaudePaths.length > 0) {
-          // 使用启动时检测的路径，过滤掉不存在的
-          const validPaths = detectedClaudePaths.filter(p => fs.existsSync(p));
-          pathsToAdd.push(...validPaths);
+    // 注入自定义环境变量
+    if (customEnvVars && customEnvVars.trim()) {
+      const lines = customEnvVars.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const eqIndex = trimmed.indexOf('=');
+        if (eqIndex > 0) {
+          const key = trimmed.substring(0, eqIndex).trim();
+          const value = trimmed.substring(eqIndex + 1).trim();
+          if (key) {
+            env[key] = value;
+          }
         }
-      }
-
-      // 添加到 PATH
-      const currentPath = env.PATH || env.Path || '';
-      const uniquePathsToAdd = pathsToAdd.filter(p => !currentPath.includes(p));
-
-      if (uniquePathsToAdd.length > 0) {
-        env.PATH = [...uniquePathsToAdd, currentPath].join(';');
-        env.Path = env.PATH;
       }
     }
 

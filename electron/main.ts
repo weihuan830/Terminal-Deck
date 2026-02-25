@@ -184,12 +184,6 @@ async function bootstrap(): Promise<void> {
 
     // 初始化配置管理器
     configManager.initialize();
-
-    // 在启动时执行 Claude 路径检测（仅在用户未手动配置时）
-    const settings = configManager.getSettings();
-    if (!settings.claudePath) {
-      configManager.runClaudeDetection();
-    }
   } catch (error) {
     console.error('Failed to initialize managers:', error);
     dialog.showErrorBox('Initialization Error', `Failed to start: ${error}`);

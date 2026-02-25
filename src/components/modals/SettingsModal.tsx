@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { useTerminalStore } from '../../stores/terminal-store';
@@ -17,12 +17,89 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [showSaveHint, setShowSaveHint] = useState(false);
 
+  // Validation states
+  const [pathValidation, setPathValidation] = useState<{ path: string; exists: boolean }[] | null>(null);
+  const [envVarErrors, setEnvVarErrors] = useState<{ line: number; message: string }[] | null>(null);
+  const [envVarValidCount, setEnvVarValidCount] = useState(0);
+  const pathDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Sync language with i18n when localSettings changes
   useEffect(() => {
     if (localSettings.language && localSettings.language !== i18n.language) {
       i18n.changeLanguage(localSettings.language);
     }
   }, [localSettings.language, i18n]);
+
+  // PATH validation with debounce
+  useEffect(() => {
+    if (pathDebounceRef.current) {
+      clearTimeout(pathDebounceRef.current);
+    }
+
+    const paths = localSettings.customPaths?.trim();
+    if (!paths) {
+      setPathValidation(null);
+      return;
+    }
+
+    pathDebounceRef.current = setTimeout(async () => {
+      try {
+        const result = await window.electronAPI.config.validatePaths(paths);
+        setPathValidation(result);
+      } catch {
+        setPathValidation(null);
+      }
+    }, 500);
+
+    return () => {
+      if (pathDebounceRef.current) {
+        clearTimeout(pathDebounceRef.current);
+      }
+    };
+  }, [localSettings.customPaths]);
+
+  // Environment variables validation (synchronous, immediate)
+  useEffect(() => {
+    const raw = localSettings.customEnvVars?.trim();
+    if (!raw) {
+      setEnvVarErrors(null);
+      setEnvVarValidCount(0);
+      return;
+    }
+
+    const lines = raw.split('\n');
+    const errors: { line: number; message: string }[] = [];
+    let validCount = 0;
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+      // Skip empty lines and comments
+      if (!trimmed || trimmed.startsWith('#')) return;
+
+      if (!trimmed.includes('=')) {
+        errors.push({ line: index + 1, message: t('settings.environment.validation.missingEquals') });
+        return;
+      }
+
+      const eqIndex = trimmed.indexOf('=');
+      const key = trimmed.substring(0, eqIndex);
+
+      if (!key) {
+        errors.push({ line: index + 1, message: t('settings.environment.validation.emptyKey') });
+        return;
+      }
+
+      if (!/^[A-Za-z0-9_]+$/.test(key)) {
+        errors.push({ line: index + 1, message: t('settings.environment.validation.invalidKey') });
+        return;
+      }
+
+      validCount++;
+    });
+
+    setEnvVarErrors(errors);
+    setEnvVarValidCount(validCount);
+  }, [localSettings.customEnvVars, t]);
 
   const handleSave = () => {
     updateSettings(localSettings);
@@ -314,6 +391,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                         'focus:border-border-active focus:outline-none'
                       )}
                     />
+                    {pathValidation && pathValidation.length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {pathValidation.every(p => p.exists) ? (
+                          <p className="text-xs text-green-400">
+                            ✓ {t('settings.environment.validation.allPathsValid')}
+                          </p>
+                        ) : (
+                          pathValidation.map((item, i) => (
+                            <p key={i} className={cn('text-xs', item.exists ? 'text-green-400' : 'text-red-400')}>
+                              {item.exists ? '✓' : '✗'} {item.path}
+                              {!item.exists && ` — ${t('settings.environment.validation.pathNotFound')}`}
+                            </p>
+                          ))
+                        )}
+                      </div>
+                    )}
                     <p className="mt-1 text-xs text-fg-muted">
                       {t('settings.environment.customPathsNote')}
                     </p>
@@ -342,6 +435,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                         'resize-y'
                       )}
                     />
+                    {envVarErrors !== null && (
+                      <div className="mt-1 space-y-0.5">
+                        {envVarErrors.length === 0 && envVarValidCount > 0 ? (
+                          <p className="text-xs text-green-400">
+                            ✓ {t('settings.environment.validation.syntaxOk', { count: envVarValidCount })}
+                          </p>
+                        ) : (
+                          envVarErrors.map((err, i) => (
+                            <p key={i} className="text-xs text-red-400">
+                              ✗ {t('settings.environment.validation.lineError', { line: err.line, message: err.message })}
+                            </p>
+                          ))
+                        )}
+                      </div>
+                    )}
                     <p className="mt-1 text-xs text-fg-muted">
                       {t('settings.environment.envVarsNote')}
                     </p>

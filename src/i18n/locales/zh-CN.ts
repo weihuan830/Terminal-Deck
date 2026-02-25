@@ -87,6 +87,15 @@ export default {
       envVars: '自定义环境变量',
       envVarsPlaceholder: '每行一个，格式：KEY=VALUE\n例如：\nMY_API_URL=https://example.com\nMY_TOKEN=abc123',
       envVarsNote: '这些环境变量会在每个新终端中生效',
+      validation: {
+        allPathsValid: '所有路径有效',
+        pathNotFound: '路径不存在',
+        syntaxOk: '语法正确，共 {{count}} 个变量',
+        lineError: '第 {{line}} 行：{{message}}',
+        missingEquals: '格式应为 KEY=VALUE',
+        emptyKey: '变量名不能为空',
+        invalidKey: '变量名包含非法字符',
+      },
     },
     saved: {
       title: '设置已保存',

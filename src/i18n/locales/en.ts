@@ -87,6 +87,15 @@ export default {
       envVars: 'Custom Environment Variables',
       envVarsPlaceholder: 'One per line, format: KEY=VALUE\ne.g.:\nMY_API_URL=https://example.com\nMY_TOKEN=abc123',
       envVarsNote: 'These environment variables will be applied to every new terminal',
+      validation: {
+        allPathsValid: 'All paths valid',
+        pathNotFound: 'Path not found',
+        syntaxOk: 'Syntax OK, {{count}} variable(s)',
+        lineError: 'Line {{line}}: {{message}}',
+        missingEquals: 'Format should be KEY=VALUE',
+        emptyKey: 'Variable name cannot be empty',
+        invalidKey: 'Variable name contains invalid characters',
+      },
     },
     saved: {
       title: 'Settings saved',

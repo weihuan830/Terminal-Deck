@@ -36,6 +36,7 @@ export interface ElectronAPI {
   config: {
     get: () => Promise<AppSettings>;
     set: (settings: Partial<AppSettings>) => Promise<AppSettings>;
+    validatePaths: (paths: string) => Promise<{ path: string; exists: boolean }[]>;
   };
 
   // 分组操作

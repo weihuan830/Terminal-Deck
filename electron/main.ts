@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, ipcMain, dialog } from 'electron';
 import path from 'path';
+import fs from 'fs';
 
 // 管理器实例 - 延迟加载
 let mainWindow: BrowserWindow | null = null;
@@ -143,6 +144,12 @@ function createMenu(): void {
  * 设置 IPC 处理器
  */
 function setupIpcHandlers(): void {
+  // 路径校验
+  ipcMain.handle('config:validatePaths', (_, { paths }: { paths: string }) => {
+    const items = paths.split(path.delimiter).map((p: string) => p.trim()).filter((p: string) => p);
+    return items.map((p: string) => ({ path: p, exists: fs.existsSync(p) }));
+  });
+
   // 选择目录对话框
   ipcMain.handle('dialog:selectDirectory', async () => {
     if (!mainWindow) return null;

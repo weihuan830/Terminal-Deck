@@ -43,6 +43,7 @@ const electronAPI = {
   config: {
     get: () => ipcRenderer.invoke('config:get'),
     set: (settings: unknown) => ipcRenderer.invoke('config:set', { settings }),
+    validatePaths: (paths: string) => ipcRenderer.invoke('config:validatePaths', { paths }),
   },
 
   // 分组操作

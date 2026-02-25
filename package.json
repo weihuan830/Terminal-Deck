@@ -1,6 +1,6 @@
 {
   "name": "terminal-deck",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A cross-platform multi-terminal manager for AI coding agents. Run and manage multiple terminal instances in one window.",
   "author": {
     "name": "weihuan830",

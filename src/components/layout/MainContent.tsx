@@ -1,41 +1,25 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Toolbar } from './Toolbar';
-import { TerminalGrid } from '../terminal/TerminalGrid';
+import { TerminalPool } from '../terminal/TerminalPool';
 import { useTerminalStore } from '../../stores/terminal-store';
 
 export const MainContent: React.FC = () => {
   const { t } = useTranslation();
-  const { groups, activeGroupId, getActiveGroup } = useTerminalStore();
-  const activeGroup = getActiveGroup();
+  const activeGroupId = useTerminalStore((state) => state.activeGroupId);
+  const groups = useTerminalStore((state) => state.groups);
+  const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
 
   return (
     <div className="flex flex-col flex-1 h-full overflow-hidden">
-      {activeGroup ? (
-        <>
-          {/* Toolbar */}
-          <Toolbar group={activeGroup} />
+      {activeGroup && <Toolbar group={activeGroup} />}
 
-          {/* Terminal grid container - all groups stay mounted, visibility controlled by CSS */}
-          <div className="flex-1 overflow-hidden relative">
-            {groups.map((group) => (
-              <div
-                key={group.id}
-                className="absolute inset-0"
-                style={{
-                  visibility: group.id === activeGroupId ? 'visible' : 'hidden',
-                  // Use visibility instead of display:none so terminals still have dimensions to render correctly
-                  // Hidden terminals won't respond to events
-                  pointerEvents: group.id === activeGroupId ? 'auto' : 'none',
-                }}
-              >
-                <TerminalGrid groupId={group.id} isActive={group.id === activeGroupId} />
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        <div className="flex items-center justify-center h-full text-fg-muted">
+      {/* TerminalPool always mounted — all terminals live here */}
+      <TerminalPool />
+
+      {/* Empty state overlay when no active group */}
+      {!activeGroup && (
+        <div className="absolute inset-0 flex items-center justify-center text-fg-muted">
           <div className="text-center">
             <svg
               className="w-16 h-16 mx-auto mb-4 text-fg-muted"

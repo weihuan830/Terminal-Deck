@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import type { TerminalGroup, Terminal, GridLayout, AppSettings } from '../types';
 
@@ -10,6 +9,7 @@ interface TerminalStore {
   activeTerminalId: string | null;
   settings: AppSettings;
   isLoading: boolean;
+  groupPages: Record<string, number>; // 每组的当前页码（临时状态，不持久化）
 
   // 分组操作
   addGroup: (name: string, layout: GridLayout) => TerminalGroup;
@@ -26,6 +26,9 @@ interface TerminalStore {
   updateTerminal: (groupId: string, terminalId: string, updates: Partial<Terminal>) => void;
   setActiveTerminal: (id: string | null) => void;
   moveTerminal: (fromGroupId: string, toGroupId: string, terminalId: string) => void;
+
+  // 分页操作
+  setGroupPage: (groupId: string, page: number) => void;
 
   // 布局操作
   setGroupLayout: (groupId: string, layout: GridLayout) => void;
@@ -69,271 +72,322 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export const useTerminalStore = create<TerminalStore>()(
-  persist(
-    (set, get) => ({
-      // 初始状态
-      groups: [],
-      activeGroupId: null,
-      activeTerminalId: null,
-      settings: DEFAULT_SETTINGS,
-      isLoading: true,
+  (set, get) => ({
+    // 初始状态
+    groups: [],
+    activeGroupId: null,
+    activeTerminalId: null,
+    settings: DEFAULT_SETTINGS,
+    isLoading: true,
+    groupPages: {},
 
-      // 分组操作
-      addGroup: (name, layout) => {
-        const newGroup: TerminalGroup = {
-          id: uuidv4(),
-          name,
-          color: generateRandomColor(),
-          layout,
-          terminals: [],
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
+    // 分组操作
+    addGroup: (name, layout) => {
+      const newGroup: TerminalGroup = {
+        id: uuidv4(),
+        name,
+        color: generateRandomColor(),
+        layout,
+        terminals: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
 
-        set((state) => ({
-          groups: [...state.groups, newGroup],
-          activeGroupId: newGroup.id,
-        }));
+      set((state) => ({
+        groups: [...state.groups, newGroup],
+        activeGroupId: newGroup.id,
+      }));
 
-        // 保存到持久化存储
-        get().saveToStorage();
+      get().saveToStorage();
 
-        return newGroup;
-      },
+      return newGroup;
+    },
 
-      removeGroup: (id) => {
-        const { groups } = get();
-        const group = groups.find((g) => g.id === id);
+    removeGroup: (id) => {
+      const { groups } = get();
+      const group = groups.find((g) => g.id === id);
 
-        // 关闭该组所有终端
-        if (group) {
-          for (const terminal of group.terminals) {
-            window.electronAPI?.terminal.kill(terminal.id);
-          }
+      // 关闭该组所有终端
+      if (group) {
+        for (const terminal of group.terminals) {
+          window.electronAPI?.terminal.kill(terminal.id);
         }
+      }
 
-        set((state) => {
-          const newGroups = state.groups.filter((g) => g.id !== id);
-          const newActiveId =
-            state.activeGroupId === id ? newGroups[0]?.id ?? null : state.activeGroupId;
+      set((state) => {
+        const newGroups = state.groups.filter((g) => g.id !== id);
+        const newActiveId =
+          state.activeGroupId === id ? newGroups[0]?.id ?? null : state.activeGroupId;
 
-          return {
-            groups: newGroups,
-            activeGroupId: newActiveId,
-          };
-        });
+        // Clean up groupPages entry
+        const newGroupPages = { ...state.groupPages };
+        delete newGroupPages[id];
 
-        get().saveToStorage();
-      },
-
-      updateGroup: (id, updates) => {
-        set((state) => ({
-          groups: state.groups.map((g) =>
-            g.id === id ? { ...g, ...updates, updatedAt: Date.now() } : g
-          ),
-        }));
-
-        get().saveToStorage();
-      },
-
-      setActiveGroup: (id) => {
-        set({ activeGroupId: id, activeTerminalId: null });
-        get().saveToStorage();
-      },
-
-      // 终端操作
-      addTerminal: (groupId, options) => {
-        const { settings } = get();
-        const newTerminal: Terminal = {
-          id: uuidv4(),
-          label: options.label,
-          cwd: options.cwd || settings.defaultCwd || '',
-          shell: options.shell || settings.defaultShell,
-          status: 'idle',
-          createdAt: Date.now(),
+        return {
+          groups: newGroups,
+          activeGroupId: newActiveId,
+          groupPages: newGroupPages,
         };
+      });
 
-        set((state) => ({
-          groups: state.groups.map((g) =>
-            g.id === groupId
-              ? {
-                  ...g,
-                  terminals: [...g.terminals, newTerminal],
-                  updatedAt: Date.now(),
-                }
-              : g
-          ),
-        }));
+      get().saveToStorage();
+    },
 
-        get().saveToStorage();
+    updateGroup: (id, updates) => {
+      set((state) => ({
+        groups: state.groups.map((g) =>
+          g.id === id ? { ...g, ...updates, updatedAt: Date.now() } : g
+        ),
+      }));
 
-        return newTerminal;
-      },
+      get().saveToStorage();
+    },
 
-      removeTerminal: (groupId, terminalId) => {
-        // 关闭终端
-        window.electronAPI?.terminal.kill(terminalId);
+    setActiveGroup: (id) => {
+      set({
+        activeGroupId: id,
+        activeTerminalId: null,
+      });
+      get().saveToStorage();
+    },
 
-        set((state) => ({
-          groups: state.groups.map((g) =>
-            g.id === groupId
-              ? {
-                  ...g,
-                  terminals: g.terminals.filter((t) => t.id !== terminalId),
-                  updatedAt: Date.now(),
-                }
-              : g
-          ),
-          activeTerminalId: state.activeTerminalId === terminalId ? null : state.activeTerminalId,
-        }));
+    // 终端操作
+    addTerminal: (groupId, options) => {
+      const { settings } = get();
+      const newTerminal: Terminal = {
+        id: uuidv4(),
+        label: options.label,
+        cwd: options.cwd || settings.defaultCwd || '',
+        shell: options.shell || settings.defaultShell,
+        status: 'idle',
+        createdAt: Date.now(),
+      };
 
-        get().saveToStorage();
-      },
+      set((state) => ({
+        groups: state.groups.map((g) =>
+          g.id === groupId
+            ? {
+                ...g,
+                terminals: [...g.terminals, newTerminal],
+                updatedAt: Date.now(),
+              }
+            : g
+        ),
+      }));
 
-      updateTerminal: (groupId, terminalId, updates) => {
-        set((state) => ({
-          groups: state.groups.map((g) =>
-            g.id === groupId
-              ? {
-                  ...g,
-                  terminals: g.terminals.map((t) => (t.id === terminalId ? { ...t, ...updates } : t)),
-                  updatedAt: Date.now(),
-                }
-              : g
-          ),
-        }));
+      get().saveToStorage();
 
-        // Persist when non-runtime properties change (label, cwd)
-        const persistKeys = ['label', 'cwd', 'shell'];
-        if (persistKeys.some((k) => k in updates)) {
-          get().saveToStorage();
-        }
-      },
+      return newTerminal;
+    },
 
-      setActiveTerminal: (id) => {
-        set({ activeTerminalId: id });
-      },
+    removeTerminal: (groupId, terminalId) => {
+      // 关闭终端
+      window.electronAPI?.terminal.kill(terminalId);
 
-      moveTerminal: (fromGroupId, toGroupId, terminalId) => {
-        if (fromGroupId === toGroupId) return;
-
-        const { groups } = get();
-        const fromGroup = groups.find((g) => g.id === fromGroupId);
-        const terminal = fromGroup?.terminals.find((t) => t.id === terminalId);
-
-        if (!terminal) return;
-
-        set((state) => ({
-          groups: state.groups.map((g) => {
-            if (g.id === fromGroupId) {
-              // 从源分组移除
-              return {
+      set((state) => {
+        const newGroups = state.groups.map((g) =>
+          g.id === groupId
+            ? {
                 ...g,
                 terminals: g.terminals.filter((t) => t.id !== terminalId),
                 updatedAt: Date.now(),
-              };
-            }
-            if (g.id === toGroupId) {
-              // 添加到目标分组
-              return {
+              }
+            : g
+        );
+
+        // Clamp the group's page if needed
+        const group = newGroups.find((g) => g.id === groupId);
+        const newGroupPages = { ...state.groupPages };
+        if (group) {
+          const perPage = group.layout.rows * group.layout.cols;
+          const totalPages = Math.ceil(group.terminals.length / perPage) || 1;
+          const currentPage = newGroupPages[groupId] ?? 0;
+          if (currentPage >= totalPages) {
+            newGroupPages[groupId] = Math.max(0, totalPages - 1);
+          }
+        }
+
+        return {
+          groups: newGroups,
+          groupPages: newGroupPages,
+          activeTerminalId: state.activeTerminalId === terminalId ? null : state.activeTerminalId,
+        };
+      });
+
+      get().saveToStorage();
+    },
+
+    updateTerminal: (groupId, terminalId, updates) => {
+      set((state) => ({
+        groups: state.groups.map((g) =>
+          g.id === groupId
+            ? {
                 ...g,
-                terminals: [...g.terminals, terminal],
+                terminals: g.terminals.map((t) => (t.id === terminalId ? { ...t, ...updates } : t)),
                 updatedAt: Date.now(),
-              };
-            }
-            return g;
-          }),
-        }));
+              }
+            : g
+        ),
+      }));
 
+      // Persist when non-runtime properties change (label, cwd)
+      const persistKeys = ['label', 'cwd', 'shell'];
+      if (persistKeys.some((k) => k in updates)) {
         get().saveToStorage();
-      },
+      }
+    },
 
-      // 布局操作
-      setGroupLayout: (groupId, layout) => {
-        set((state) => ({
+    setActiveTerminal: (id) => {
+      set({ activeTerminalId: id });
+    },
+
+    moveTerminal: (fromGroupId, toGroupId, terminalId) => {
+      if (fromGroupId === toGroupId) return;
+
+      const { groups } = get();
+      const fromGroup = groups.find((g) => g.id === fromGroupId);
+      const terminal = fromGroup?.terminals.find((t) => t.id === terminalId);
+
+      if (!terminal) return;
+
+      set((state) => {
+        const newGroups = state.groups.map((g) => {
+          if (g.id === fromGroupId) {
+            return {
+              ...g,
+              terminals: g.terminals.filter((t) => t.id !== terminalId),
+              updatedAt: Date.now(),
+            };
+          }
+          if (g.id === toGroupId) {
+            return {
+              ...g,
+              terminals: [...g.terminals, terminal],
+              updatedAt: Date.now(),
+            };
+          }
+          return g;
+        });
+
+        // Clamp source group's page after removing a terminal
+        const newFromGroup = newGroups.find((g) => g.id === fromGroupId);
+        const newGroupPages = { ...state.groupPages };
+        if (newFromGroup) {
+          const perPage = newFromGroup.layout.rows * newFromGroup.layout.cols;
+          const totalPages = Math.ceil(newFromGroup.terminals.length / perPage) || 1;
+          const currentPage = newGroupPages[fromGroupId] ?? 0;
+          if (currentPage >= totalPages) {
+            newGroupPages[fromGroupId] = Math.max(0, totalPages - 1);
+          }
+        }
+
+        return {
+          groups: newGroups,
+          groupPages: newGroupPages,
+        };
+      });
+
+      get().saveToStorage();
+    },
+
+    // 分页操作
+    setGroupPage: (groupId, page) => {
+      set((state) => ({
+        groupPages: { ...state.groupPages, [groupId]: page },
+      }));
+    },
+
+    // 布局操作
+    setGroupLayout: (groupId, layout) => {
+      set((state) => {
+        // Clamp page for the new layout
+        const group = state.groups.find((g) => g.id === groupId);
+        const newGroupPages = { ...state.groupPages };
+        if (group) {
+          const perPage = layout.rows * layout.cols;
+          const totalPages = Math.ceil(group.terminals.length / perPage) || 1;
+          const currentPage = newGroupPages[groupId] ?? 0;
+          if (currentPage >= totalPages) {
+            newGroupPages[groupId] = Math.max(0, totalPages - 1);
+          }
+        }
+
+        return {
           groups: state.groups.map((g) =>
             g.id === groupId ? { ...g, layout, updatedAt: Date.now() } : g
           ),
-        }));
+          groupPages: newGroupPages,
+        };
+      });
 
-        get().saveToStorage();
-      },
+      get().saveToStorage();
+    },
 
-      // 设置操作
-      updateSettings: (newSettings) => {
-        set((state) => ({
-          settings: { ...state.settings, ...newSettings },
-        }));
+    // 设置操作
+    updateSettings: (newSettings) => {
+      set((state) => ({
+        settings: { ...state.settings, ...newSettings },
+      }));
 
-        // 保存到 Electron store
-        window.electronAPI?.config.set(newSettings);
-      },
+      // 保存到 Electron store
+      window.electronAPI?.config.set(newSettings);
+    },
 
-      // 数据操作
-      loadFromStorage: async () => {
-        try {
-          if (window.electronAPI) {
-            const data = await window.electronAPI.groups.load();
-            const settings = await window.electronAPI.config.get();
+    // 数据操作
+    loadFromStorage: async () => {
+      try {
+        if (window.electronAPI) {
+          const data = await window.electronAPI.groups.load();
+          const settings = await window.electronAPI.config.get();
 
-            // Reset terminal status to 'idle' — PTY processes don't survive app restart
-            // but terminals will be re-created when their components mount
-            const restoredGroups = (data.groups || []).map((g: TerminalGroup) => ({
-              ...g,
-              terminals: g.terminals.map((t) => ({
-                ...t,
-                status: 'idle' as const,
-                exitCode: undefined,
-              })),
-            }));
+          // Reset terminal status to 'idle' — PTY processes don't survive app restart
+          // but terminals will be re-created when their components mount
+          const restoredGroups = (data.groups || []).map((g: TerminalGroup) => ({
+            ...g,
+            terminals: g.terminals.map((t) => ({
+              ...t,
+              status: 'idle' as const,
+              exitCode: undefined,
+            })),
+          }));
 
-            // Merge loaded settings with defaults to fill any missing fields
-            const mergedSettings = { ...DEFAULT_SETTINGS, ...(settings || {}) };
+          // Merge loaded settings with defaults to fill any missing fields
+          const mergedSettings = { ...DEFAULT_SETTINGS, ...(settings || {}) };
 
-            set({
-              groups: restoredGroups,
-              activeGroupId: data.lastActiveGroupId || data.groups?.[0]?.id || null,
-              settings: mergedSettings,
-              isLoading: false,
-            });
-          } else {
-            set({ isLoading: false });
-          }
-        } catch (error) {
-          console.error('Failed to load groups:', error);
+          set({
+            groups: restoredGroups,
+            activeGroupId: data.lastActiveGroupId || data.groups?.[0]?.id || null,
+            settings: mergedSettings,
+            isLoading: false,
+          });
+        } else {
           set({ isLoading: false });
         }
-      },
+      } catch (error) {
+        console.error('Failed to load groups:', error);
+        set({ isLoading: false });
+      }
+    },
 
-      saveToStorage: async () => {
-        const { groups, activeGroupId } = get();
-        try {
-          await window.electronAPI?.groups.save(groups, activeGroupId);
-        } catch (error) {
-          console.error('Failed to save groups:', error);
-        }
-      },
+    saveToStorage: async () => {
+      const { groups, activeGroupId } = get();
+      try {
+        await window.electronAPI?.groups.save(groups, activeGroupId);
+      } catch (error) {
+        console.error('Failed to save groups:', error);
+      }
+    },
 
-      // 辅助方法
-      getActiveGroup: () => {
-        const { groups, activeGroupId } = get();
-        return groups.find((g) => g.id === activeGroupId) || null;
-      },
+    // 辅助方法
+    getActiveGroup: () => {
+      const { groups, activeGroupId } = get();
+      return groups.find((g) => g.id === activeGroupId) || null;
+    },
 
-      getTerminal: (groupId, terminalId) => {
-        const { groups } = get();
-        const group = groups.find((g) => g.id === groupId);
-        return group?.terminals.find((t) => t.id === terminalId) || null;
-      },
-    }),
-    {
-      name: 'terminal-store',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        groups: state.groups,
-        activeGroupId: state.activeGroupId,
-        settings: state.settings,
-      }),
-    }
-  )
+    getTerminal: (groupId, terminalId) => {
+      const { groups } = get();
+      const group = groups.find((g) => g.id === groupId);
+      return group?.terminals.find((t) => t.id === terminalId) || null;
+    },
+  })
 );

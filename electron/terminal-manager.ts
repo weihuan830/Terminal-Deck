@@ -63,6 +63,12 @@ export class TerminalManager extends EventEmitter {
     try {
       const { terminalId, cwd, shell, cols, rows } = options;
 
+      // 如果同一个 terminalId 已存在旧的 PTY 进程，先清理掉，防止泄漏
+      // （终端在分组间拖拽时，React 会 unmount+remount，导致重复 create）
+      if (this.processes.has(terminalId)) {
+        this.killTerminal(terminalId);
+      }
+
       // 检测 shell
       const shellPath = this.resolveShell(shell);
       const shellArgs = this.getShellArgs(shellPath);

@@ -9,6 +9,7 @@ import type { TerminalStatus } from '../types';
 interface UseTerminalOptions {
   terminalId: string;
   groupId: string;
+  isVisible?: boolean; // 终端当前是否可见（分组激活且在当前页）
 }
 
 const darkTerminalTheme = {
@@ -68,7 +69,7 @@ function getTerminalTheme(theme: string): typeof darkTerminalTheme {
   return darkTerminalTheme;
 }
 
-export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
+export function useTerminal({ terminalId, groupId, isVisible = true }: UseTerminalOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -144,10 +145,14 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
               resolve();
               return;
             }
-            try {
-              fitAddon.fit();
-            } catch (e) {
-              console.warn('Failed to fit terminal:', e);
+            // 只在容器有合理尺寸时 fit（隐藏终端是 1x1，fit 会得到错误的极小值）
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (rect && rect.width > 1 && rect.height > 1) {
+              try {
+                fitAddon.fit();
+              } catch (e) {
+                console.warn('Failed to fit terminal:', e);
+              }
             }
             resolve();
           });
@@ -156,14 +161,18 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
 
       if (!mounted) return;
 
-      // 创建 PTY 进程 - 此时尺寸已经准确
+      // 创建 PTY 进程
+      // 如果终端当前隐藏（1x1），cols/rows 可能是 xterm 默认值（80x24），这是正确的
+      // 当终端变为可见时，ResizeObserver + visibility effect 会重新 fit 到正确尺寸
       const data = terminalDataRef.current!;
+      const initCols = terminal.cols >= 10 ? terminal.cols : 80;
+      const initRows = terminal.rows >= 4 ? terminal.rows : 24;
       const result = await window.electronAPI.terminal.create({
         terminalId,
         cwd: data.cwd || '',
         shell: data.shell || 'default',
-        cols: terminal.cols,
-        rows: terminal.rows,
+        cols: initCols,
+        rows: initRows,
         customPaths: settings.customPaths,
         customEnvVars: settings.customEnvVars,
       });
@@ -230,6 +239,29 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
       terminalRef.current.options.theme = getTerminalTheme(settings.theme);
     }
   }, [settings.theme]);
+
+  // 当终端从隐藏(1x1)变为可见(grid cell)时的兜底 fit
+  // 新架构下 ResizeObserver 会在 1x1→正常尺寸 时自然触发，
+  // 但此 effect 作为双保险，确保 fit 一定执行
+  useEffect(() => {
+    if (!isVisible || !isReadyRef.current || !fitAddonRef.current || !terminalRef.current) return;
+
+    let cancelled = false;
+    // 双 rAF 等待 DOM 布局完成
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (cancelled || !fitAddonRef.current || !terminalRef.current) return;
+        try {
+          fitAddonRef.current.fit();
+          terminalRef.current.refresh(0, terminalRef.current.rows - 1);
+        } catch (e) {
+          console.warn('Failed to fit terminal on visibility change:', e);
+        }
+      });
+    });
+
+    return () => { cancelled = true; };
+  }, [isVisible]);
 
   // 监听终端数据 - 带 resize 缓冲
   useEffect(() => {
@@ -326,8 +358,8 @@ export function useTerminal({ terminalId, groupId }: UseTerminalOptions) {
 
       const { width, height } = entry.contentRect;
 
-      // 忽略初始化时的调用和相同尺寸
-      if (width === 0 || height === 0) return;
+      // 忽略初始化时的调用、相同尺寸和隐藏状态(1x1)
+      if (width <= 1 || height <= 1) return;
       if (width === lastContainerSize.width && height === lastContainerSize.height) return;
 
       lastContainerSize = { width, height };

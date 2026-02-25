@@ -16,6 +16,7 @@ interface TerminalCellProps {
   terminal: Terminal;
   groupId: string;
   isActive: boolean;
+  isVisible: boolean; // 终端当前是否可见（分组激活且在当前页）
   onFocus: () => void;
 }
 
@@ -23,12 +24,14 @@ export const TerminalCell: React.FC<TerminalCellProps> = ({
   terminal,
   groupId,
   isActive,
+  isVisible,
   onFocus,
 }) => {
   const { t } = useTranslation();
   const { containerRef, focus, terminalInstance } = useTerminal({
     terminalId: terminal.id,
     groupId,
+    isVisible,
   });
 
   const { removeTerminal, updateTerminal } = useTerminalStore();

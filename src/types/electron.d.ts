@@ -45,7 +45,7 @@ export interface ElectronAPI {
       groups: TerminalGroup[];
       lastActiveGroupId: string | null;
     }>;
-    save: (groups: TerminalGroup[]) => Promise<void>;
+    save: (groups: TerminalGroup[], activeGroupId?: string | null) => Promise<void>;
   };
 
   // 对话框

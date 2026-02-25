@@ -1,7 +1,7 @@
 {
   "name": "terminal-deck",
-  "version": "1.2.0",
-  "description": "A cross-platform multi-terminal manager for AI coding agents. Run and manage multiple Claude Code instances in one window.",
+  "version": "1.3.0",
+  "description": "A cross-platform multi-terminal manager for AI coding agents. Run and manage multiple terminal instances in one window.",
   "author": {
     "name": "weihuan830",
     "email": "weihuan830@users.noreply.github.com"
@@ -18,7 +18,7 @@
   "keywords": [
     "terminal",
     "multi-terminal",
-    "claude",
+    "ai-coding",
     "ai-agent",
     "electron",
     "terminal-manager",

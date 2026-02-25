@@ -24,7 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collap
       <div className="flex items-center h-14 border-b border-border-color px-2">
         {!collapsed && (
           <h1 className="flex-1 text-lg font-bold text-fg-primary text-center">
-            Claude Terminal
+            Terminal Deck
           </h1>
         )}
         <button

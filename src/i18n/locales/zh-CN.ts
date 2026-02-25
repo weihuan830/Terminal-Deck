@@ -46,8 +46,10 @@ export default {
     selectLayout: '选择布局',
     noGroups: '没有分组',
     clickToCreate: '点击下方按钮创建',
-    deleteConfirm: '确定要删除分组 "{{name}}" 吗？所有终端将被关闭。',
+    deleteConfirm: '确定要删除分组 "{{name}}" 吗？',
     deleteGroup: '删除分组',
+    renameGroup: '重命名',
+    cannotDelete: '请先关闭分组内所有终端后再删除',
   },
   mainContent: {
     noSelectedGroup: '没有选中的分组',

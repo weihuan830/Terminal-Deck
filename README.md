@@ -1,6 +1,6 @@
 # Terminal Deck
 
-A cross-platform multi-terminal manager designed for AI coding agents. Run and manage multiple Claude Code (or other AI agent) instances in a single, organized window.
+A cross-platform multi-terminal manager designed for AI coding agents. Run and manage multiple AI agent instances in a single, organized window.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
@@ -58,14 +58,14 @@ npm run build
 3. Click **+ Add Terminal** to add terminals to the group (or press `Ctrl+T`)
 4. Select a grid layout from the toolbar to arrange your terminals
 
-### Working with Claude Code
+### Working with AI Agents
 
-Terminal Deck is optimized for running multiple Claude Code instances:
+Terminal Deck is optimized for running multiple AI coding agent instances:
 
 1. Create a group for your project
 2. Add multiple terminals
-3. In each terminal, navigate to your project and run `claude`
-4. Monitor all your AI agents working simultaneously
+3. In each terminal, navigate to your project and launch your AI agent
+4. Monitor all your agents working simultaneously
 
 ### Keyboard Shortcuts
 
@@ -159,8 +159,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [xterm.js](https://xtermjs.org/) - Terminal emulator component
 - [node-pty](https://github.com/microsoft/node-pty) - PTY bindings for Node.js
 - [Electron](https://www.electronjs.org/) - Desktop app framework
-- [Claude Code](https://claude.ai/) - AI coding assistant by Anthropic
-
 ---
 
-Made with Claude Code
+Made with Terminal Deck

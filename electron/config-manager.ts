@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   fontSize: 14,
   fontFamily: 'Consolas, "Courier New", monospace',
+  language: 'zh-CN',
   defaultShell: 'default',
   defaultCwd: '',
   scrollbackLines: 10000,
@@ -36,7 +37,7 @@ export class ConfigManager {
   constructor() {
     try {
       this.store = new Store<PersistedData>({
-        name: 'claude-terminal-manager',
+        name: 'terminal-deck',
         defaults: {
           version: 1,
           groups: [],
@@ -49,7 +50,7 @@ export class ConfigManager {
       console.error('Failed to create config store, using defaults:', error);
       // 创建一个最小化的store
       this.store = new Store<PersistedData>({
-        name: 'claude-terminal-manager-backup',
+        name: 'terminal-deck-backup',
         defaults: {
           version: 1,
           groups: [],
@@ -80,8 +81,11 @@ export class ConfigManager {
     });
 
     // 保存分组
-    ipcMain.handle('groups:save', (_, { groups }) => {
-      return this.saveGroups(groups);
+    ipcMain.handle('groups:save', (_, { groups, activeGroupId }) => {
+      this.saveGroups(groups);
+      if (activeGroupId !== undefined) {
+        this.setLastActiveGroup(activeGroupId);
+      }
     });
   }
 

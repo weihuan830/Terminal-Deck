@@ -11,9 +11,7 @@ interface ToolbarProps {
 
 export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
   const { t } = useTranslation();
-  const { addTerminal, setGroupLayout, updateGroup, removeGroup } = useTerminalStore();
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editName, setEditName] = useState(group.name);
+  const { addTerminal, setGroupLayout } = useTerminalStore();
   const [showLayoutPicker, setShowLayoutPicker] = useState(false);
   const [pickerPosition, setPickerPosition] = useState({ top: 0, right: 0 });
   const layoutButtonRef = useRef<HTMLButtonElement>(null);
@@ -40,27 +38,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
     }
   };
 
-  // Handle name edit
-  const handleNameSubmit = () => {
-    if (editName.trim()) {
-      updateGroup(group.id, { name: editName.trim() });
-    } else {
-      setEditName(group.name);
-    }
-    setIsEditingName(false);
-  };
-
   // Handle layout selection
   const handleLayoutSelect = (layout: GridLayout) => {
     setGroupLayout(group.id, layout);
     setShowLayoutPicker(false);
-  };
-
-  // Handle delete group
-  const handleDeleteGroup = () => {
-    if (window.confirm(t('group.deleteConfirm', { name: group.name }))) {
-      removeGroup(group.id);
-    }
   };
 
   return (
@@ -74,30 +55,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
         />
 
         {/* Group name */}
-        {isEditingName ? (
-          <input
-            type="text"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            onBlur={handleNameSubmit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleNameSubmit();
-              if (e.key === 'Escape') {
-                setEditName(group.name);
-                setIsEditingName(false);
-              }
-            }}
-            className="px-2 py-1 bg-bg-tertiary border border-border-active rounded text-fg-primary outline-none"
-            autoFocus
-          />
-        ) : (
-          <h2
-            className="text-lg font-medium text-fg-primary cursor-pointer hover:text-white"
-            onDoubleClick={() => setIsEditingName(true)}
-          >
-            {group.name}
-          </h2>
-        )}
+        <h2 className="text-lg font-medium text-fg-primary">
+          {group.name}
+        </h2>
 
         {/* Terminal count */}
         <span className="text-sm text-fg-muted">
@@ -163,26 +123,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ group }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           {t('terminal.addTerminal')}
-        </button>
-
-        {/* Delete group button */}
-        <button
-          onClick={handleDeleteGroup}
-          className={cn(
-            'p-1.5 rounded',
-            'text-fg-muted hover:text-status-error',
-            'hover:bg-bg-hover transition-colors'
-          )}
-          title={t('group.deleteGroup')}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
         </button>
       </div>
     </div>

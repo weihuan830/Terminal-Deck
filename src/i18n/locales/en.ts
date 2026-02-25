@@ -46,8 +46,10 @@ export default {
     selectLayout: 'Select Layout',
     noGroups: 'No groups',
     clickToCreate: 'Click the button below to create',
-    deleteConfirm: 'Are you sure you want to delete group "{{name}}"? All terminals will be closed.',
+    deleteConfirm: 'Are you sure you want to delete group "{{name}}"?',
     deleteGroup: 'Delete group',
+    renameGroup: 'Rename',
+    cannotDelete: 'Please close all terminals in this group before deleting',
   },
   mainContent: {
     noSelectedGroup: 'No group selected',

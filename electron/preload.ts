@@ -49,7 +49,8 @@ const electronAPI = {
   // 分组操作
   groups: {
     load: () => ipcRenderer.invoke('groups:load'),
-    save: (groups: unknown) => ipcRenderer.invoke('groups:save', { groups }),
+    save: (groups: unknown, activeGroupId?: string | null) =>
+      ipcRenderer.invoke('groups:save', { groups, activeGroupId }),
   },
 
   // 对话框

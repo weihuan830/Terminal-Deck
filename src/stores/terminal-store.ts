@@ -202,6 +202,12 @@ export const useTerminalStore = create<TerminalStore>()(
               : g
           ),
         }));
+
+        // Persist when non-runtime properties change (label, cwd)
+        const persistKeys = ['label', 'cwd', 'shell'];
+        if (persistKeys.some((k) => k in updates)) {
+          get().saveToStorage();
+        }
       },
 
       setActiveTerminal: (id) => {
@@ -270,10 +276,24 @@ export const useTerminalStore = create<TerminalStore>()(
             const data = await window.electronAPI.groups.load();
             const settings = await window.electronAPI.config.get();
 
+            // Reset terminal status to 'idle' — PTY processes don't survive app restart
+            // but terminals will be re-created when their components mount
+            const restoredGroups = (data.groups || []).map((g: TerminalGroup) => ({
+              ...g,
+              terminals: g.terminals.map((t) => ({
+                ...t,
+                status: 'idle' as const,
+                exitCode: undefined,
+              })),
+            }));
+
+            // Merge loaded settings with defaults to fill any missing fields
+            const mergedSettings = { ...DEFAULT_SETTINGS, ...(settings || {}) };
+
             set({
-              groups: data.groups || [],
+              groups: restoredGroups,
               activeGroupId: data.lastActiveGroupId || data.groups?.[0]?.id || null,
-              settings: settings || DEFAULT_SETTINGS,
+              settings: mergedSettings,
               isLoading: false,
             });
           } else {
@@ -286,9 +306,9 @@ export const useTerminalStore = create<TerminalStore>()(
       },
 
       saveToStorage: async () => {
-        const { groups } = get();
+        const { groups, activeGroupId } = get();
         try {
-          await window.electronAPI?.groups.save(groups);
+          await window.electronAPI?.groups.save(groups, activeGroupId);
         } catch (error) {
           console.error('Failed to save groups:', error);
         }

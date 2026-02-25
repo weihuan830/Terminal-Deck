@@ -248,15 +248,3 @@ app.on('before-quit', () => {
   console.log('App is quitting, cleaning up terminals...');
   terminalManager?.dispose();
 });
-
-// 确保所有进程都被清理（Windows 特有问题）
-app.on('will-quit', (event) => {
-  if (terminalManager && terminalManager.getRunningCount() > 0) {
-    event.preventDefault();
-    terminalManager.dispose();
-    // 给一点时间让进程清理完成
-    setTimeout(() => {
-      app.quit();
-    }, 500);
-  }
-});

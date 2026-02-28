@@ -76,7 +76,13 @@ Terminal Deck is optimized for running multiple AI coding agent instances:
 | `Ctrl/Cmd + W` | Close Terminal |
 | `Ctrl/Cmd + Tab` | Next Group |
 | `Ctrl/Cmd + Shift + Tab` | Previous Group |
-| `Alt/Option + Arrow Keys` | Navigate Terminals |
+| `Ctrl/Cmd + 1-9` | Switch to Group N |
+| `Ctrl/Cmd + ,` | Open Settings |
+| `Ctrl/Cmd + =` | Zoom In |
+| `Ctrl/Cmd + -` | Zoom Out |
+| `Ctrl/Cmd + 0` | Reset Zoom |
+
+> **Note:** Zoom in uses `Ctrl + =` (the equals key), not `Ctrl + +`. This is because `+` requires `Shift + =` on standard keyboards. Chromium/Electron maps the zoom-in shortcut to the `=` key directly.
 
 ### Grid Layouts
 

@@ -80,6 +80,8 @@ export default {
       defaultCwd: '默认工作目录',
       defaultCwdPlaceholder: '留空使用用户目录',
       scrollbackLines: '回滚行数',
+      resourceLogging: '资源日志',
+      resourceLoggingDesc: '记录每个终端进程的 CPU 和内存占用',
     },
     environment: {
       title: '环境配置',

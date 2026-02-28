@@ -73,6 +73,9 @@ export interface AppSettings {
   defaultCwd: string;
   scrollbackLines: number;
 
+  // 资源日志
+  resourceLogging?: boolean; // 记录 PTY 进程 CPU/内存占用
+
   // 环境配置
   customPaths?: string;      // 额外 PATH 路径（分号/冒号分隔）
   customEnvVars?: string;    // 自定义环境变量，每行一个 KEY=VALUE

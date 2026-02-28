@@ -208,8 +208,17 @@ async function bootstrap(): Promise<void> {
   setupIpcHandlers();
 
   // 初始化终端管理器
-  if (mainWindow && terminalManager) {
-    terminalManager.initialize(mainWindow);
+  if (mainWindow && terminalManager && configManager) {
+    const initialSettings = configManager.getSettings();
+    const resourceLogging = initialSettings.resourceLogging !== false;
+    terminalManager.initialize(mainWindow, resourceLogging);
+
+    // 监听设置变更，联动资源日志开关
+    configManager.onSettingsChanged((settings) => {
+      if ('resourceLogging' in settings) {
+        terminalManager!.setResourceLogging(settings.resourceLogging !== false);
+      }
+    });
   }
 
   // macOS 特定：点击 dock 图标时重新创建窗口

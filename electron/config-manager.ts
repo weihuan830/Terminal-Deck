@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultShell: 'default',
   defaultCwd: '',
   scrollbackLines: 10000,
+  resourceLogging: true,
   shortcuts: {
     newGroup: 'CmdOrCtrl+N',
     newTerminal: 'CmdOrCtrl+T',
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 export class ConfigManager {
   private store: Store<PersistedData>;
+  private onSettingsChangedCallback: ((settings: Partial<AppSettings>) => void) | null = null;
 
   constructor() {
     try {
@@ -72,7 +74,9 @@ export class ConfigManager {
 
     // 保存设置
     ipcMain.handle('config:set', (_, { settings }) => {
-      return this.setSettings(settings);
+      const updated = this.setSettings(settings);
+      this.onSettingsChangedCallback?.(settings);
+      return updated;
     });
 
     // 加载分组
@@ -128,6 +132,13 @@ export class ConfigManager {
    */
   setLastActiveGroup(groupId: string | null): void {
     this.store.set('lastActiveGroupId', groupId);
+  }
+
+  /**
+   * 注册设置变更回调
+   */
+  onSettingsChanged(callback: (settings: Partial<AppSettings>) => void): void {
+    this.onSettingsChangedCallback = callback;
   }
 
   /**

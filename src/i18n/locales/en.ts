@@ -80,6 +80,8 @@ export default {
       defaultCwd: 'Default Working Directory',
       defaultCwdPlaceholder: 'Leave empty to use user directory',
       scrollbackLines: 'Scrollback Lines',
+      resourceLogging: 'Resource Logging',
+      resourceLoggingDesc: 'Log CPU and memory usage for each terminal process',
     },
     environment: {
       title: 'Environment Configuration',

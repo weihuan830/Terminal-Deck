@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { GroupList } from '../sidebar/GroupList';
+import { useTerminalStore } from '../../stores/terminal-store';
 import { cn } from '../../utils/cn';
 
 interface SidebarProps {
@@ -12,6 +13,9 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collapsed, onToggleCollapse }) => {
   const { t } = useTranslation();
+  const groups = useTerminalStore((state) => state.groups);
+  const activeGroupId = useTerminalStore((state) => state.activeGroupId);
+  const setActiveGroup = useTerminalStore((state) => state.setActiveGroup);
 
   return (
     <div
@@ -53,7 +57,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewGroup, onSettings, collap
         {!collapsed && <GroupList />}
         {collapsed && (
           <div className="flex flex-col items-center py-2 space-y-2">
-            {/* Show icon hints in collapsed state */}
+            {groups.map((group) => (
+              <button
+                key={group.id}
+                onClick={() => setActiveGroup(group.id)}
+                className={cn(
+                  'w-10 h-10 rounded-lg flex items-center justify-center',
+                  'text-white text-sm font-bold transition-all',
+                  group.id === activeGroupId
+                    ? 'ring-2 ring-white/40 scale-110'
+                    : 'opacity-70 hover:opacity-100 hover:scale-105'
+                )}
+                style={{ backgroundColor: group.color }}
+                title={group.name}
+              >
+                {group.name.charAt(0)}
+              </button>
+            ))}
           </div>
         )}
       </div>

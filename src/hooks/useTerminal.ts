@@ -254,6 +254,7 @@ export function useTerminal({ terminalId, groupId, isVisible = true }: UseTermin
         try {
           fitAddonRef.current.fit();
           terminalRef.current.refresh(0, terminalRef.current.rows - 1);
+          terminalRef.current.scrollToBottom();
         } catch (e) {
           console.warn('Failed to fit terminal on visibility change:', e);
         }

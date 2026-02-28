@@ -4,6 +4,7 @@ import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
+import { ResourceLogger } from './resource-logger';
 
 interface PtyProcess {
   id: string;
@@ -14,13 +15,16 @@ interface PtyProcess {
 export class TerminalManager extends EventEmitter {
   private processes: Map<string, PtyProcess> = new Map();
   private mainWindow: BrowserWindow | null = null;
+  private resourceLogger: ResourceLogger = new ResourceLogger();
 
   /**
    * 初始化
    */
-  initialize(mainWindow: BrowserWindow): void {
+  initialize(mainWindow: BrowserWindow, resourceLogging = true): void {
     this.mainWindow = mainWindow;
     this.setupIpcHandlers();
+    this.resourceLogger.setEnabled(resourceLogging);
+    this.resourceLogger.start(this.processes);
   }
 
   /**
@@ -333,9 +337,17 @@ export class TerminalManager extends EventEmitter {
   }
 
   /**
+   * 设置资源日志开关
+   */
+  setResourceLogging(enabled: boolean): void {
+    this.resourceLogger.setEnabled(enabled);
+  }
+
+  /**
    * 清理资源（窗口关闭时调用）
    */
   dispose(): void {
+    this.resourceLogger.stop();
     this.killAll();
     this.mainWindow = null;
   }

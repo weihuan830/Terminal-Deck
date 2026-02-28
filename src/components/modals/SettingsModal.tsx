@@ -357,6 +357,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 )}
               />
             </div>
+
+            {/* Resource logging */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm text-fg-secondary">{t('settings.terminal.resourceLogging')}</label>
+                <p className="text-xs text-fg-muted mt-0.5">{t('settings.terminal.resourceLoggingDesc')}</p>
+              </div>
+              <button
+                onClick={() =>
+                  setLocalSettings((s) => ({
+                    ...s,
+                    resourceLogging: !(s.resourceLogging ?? true),
+                  }))
+                }
+                className={cn(
+                  'relative w-9 h-5 rounded-full transition-colors flex-shrink-0',
+                  (localSettings.resourceLogging ?? true)
+                    ? 'bg-accent-primary'
+                    : 'bg-bg-tertiary border border-border-color'
+                )}
+              >
+                <span
+                  className={cn(
+                    'absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform',
+                    (localSettings.resourceLogging ?? true) ? 'left-[18px]' : 'left-0.5'
+                  )}
+                />
+              </button>
+            </div>
           </div>
         </div>
             </>
